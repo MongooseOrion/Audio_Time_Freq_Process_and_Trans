@@ -9,7 +9,7 @@
 	output      reg_conf_done   ,
 	output      i2c_sclk        ,
 	inout       i2c_sdat        ,
-    output      clock_i2c        
+    output  reg    clock_i2c        
 );
 
      reg [15:0]clock_cnt;
@@ -18,7 +18,6 @@
      reg [15:0]reg_data;
      reg start/*synthesis PAP_MARK_DEBUG="1"*/;
 	 reg reg_conf_done_reg;
-     reg clock_i2c/*synthesis PAP_MARK_DEBUG="1"*/;
      reg [8:0]reg_index/*synthesis PAP_MARK_DEBUG="1"*/;
 	  
      i2c_com u_i2c_com(
@@ -85,7 +84,7 @@ begin
 always@(reg_index)   
  begin
     case(reg_index)
-	 0  :reg_data    <=16'h1000 ;//:V1000@//Version  2023.5.17 罗皓发的寄存器列表
+	 0  :reg_data    <=16'h1000 ;//:V1000@
 	 1  :reg_data    <=16'h013A ;//:w013A@                              
 	 2  :reg_data    <=16'h0080 ;//:w0080@
 	 3  :reg_data    <=16'h0402 ;//:w0402@
@@ -94,18 +93,18 @@ always@(reg_index)
 	 6  :reg_data    <=16'h001E ;//:w001E@
 	 7  :reg_data    <=16'h0100 ;//:w0100@
 	 8  :reg_data    <=16'h0200 ;//:w0200@
-	 9  :reg_data    <=16'h0320 ;//:w0320@
+	 9  :reg_data    <=16'h0320 ;//:w0320@			// 过采样率控制，128*f_s 默认
 	 10 :reg_data    <=16'h0D00 ;//:w0D00@
 	 11 :reg_data    <=16'hF900 ;//:wF900@
-	 12 :reg_data    <=16'h0402 ;//:w0402@
-	 13 :reg_data    <=16'h0401 ;//:w0401@
+	 12 :reg_data    <=16'h0400 ;//:w0402@			// 无效
+	 13 :reg_data    <=16'h0401 ;//:w0401@			// 预分频：无, 预乘：2x 幅值增益
 	 14 :reg_data    <=16'h0500 ;//:w0500@
 	 15 :reg_data    <=16'h0607 ;//:w0607@
-	 16 :reg_data    <=16'h0700 ;//:w0700@
-	 17 :reg_data    <=16'h08FF ;//:w08FF@
+	 16 :reg_data    <=16'h0700 ;//:w0700@			// 6:4==0, 3:0==LRCK divider 11:8
+	 17 :reg_data    <=16'h08FF ;//:w08FF@			// LRCK divider 7:0, mclk(12.288MHz)/0xff+1(256)==48kHz
 	 18 :reg_data    <=16'h09C5 ;//:w09C5@
 	 19 :reg_data    <=16'h0A81 ;//:w0A81@
-	 20 :reg_data    <=16'h0B0C ;//:w0B0C@
+	 20 :reg_data    <=16'h0B0C ;//:w0B0C@			// 7:5==0, 不要静音不反相, 4:2==3(量化深度 16bit)
 	 21 :reg_data    <=16'h0EBF ;//:w0EBF@
 	 22 :reg_data    <=16'h0F80 ;//:w0F80@
 	 23 :reg_data    <=16'h140C ;//:w140C@
