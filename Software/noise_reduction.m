@@ -1,10 +1,19 @@
-% 读取第一个音频文件
-[audio1, fs1] = audioread('去噪测试音频样本1.m4a');
+% 对去噪效果进行仿真
 
+%% 读取文件
+raw_file = '../Sample/去噪测试音频样本1.m4a';
+noise_file = '../Sample/noise_splited.m4a';
+voice_file = '../Sample/voice_splited.m4a';
+posted_file = '../Sample/noise_reduced.wav';
+[audio1, fs1] = audioread(raw_file);
+[audio2, fs2] = audioread(noise_file);
+[audio3, fs3] = audioread(voice_file);
+
+%% 处理原始文件
 % 双通道变单通道
 audio1 = audio1(:, 1);
-audio1=audio1-mean(audio1);                         % 消除直流分量
-audio1=audio1/max(abs(audio1));                      % 幅值归一化
+audio1 = audio1-mean(audio1);                             % 消除直流分量
+audio1 = audio1/max(abs(audio1));                         % 幅值归一化
 % 获取音频长度和采样间隔
 n1 = length(audio1);
 T1 = 1/fs1;
@@ -12,47 +21,44 @@ T1 = 1/fs1;
 audio_fft1 = fft(audio1, n1);
 c1=abs(audio_fft1);
 audio_fft1_1 = audio_fft1;
-% 读取第一个音频文件
-[audio2, fs2] = audioread('分割完成！ - LALAL.AI_2.m4a');
+
+%% 处理噪声文件
 % 双通道变单通道
 audio2 = audio2(:, 1);
-audio2=audio2-mean(audio2);                         % 消除直流分量
-audio2=audio2/max(abs(audio2));                      % 幅值归一化
+audio2 = audio2-mean(audio2);                             % 消除直流分量
+audio2 = audio2/max(abs(audio2));                         % 幅值归一化
 % 获取音频长度和采样间隔
 n2 = length(audio2);
 T2 = 1/fs2;
 audio_fft2 = fft(audio2, n1);
 c2=abs(audio_fft2);
 
-% 读取第一个音频文件
-[audio3, fs3] = audioread('分割完成！ - LALAL.AI.m4a');
+%% 处理人声文件
 % 双通道变单通道
 audio3 = audio3(:, 1);
-audio3=audio3-mean(audio3);                         % 消除直流分量
-audio3=audio3/max(abs(audio3));                      % 幅值归一化
+audio3 = audio3-mean(audio3);                             % 消除直流分量
+audio3 = audio3/max(abs(audio3));                         % 幅值归一化
 % 获取音频长度和采样间隔
 n3 = length(audio3);
 % 进行快速傅里叶变换
 audio_fft3 = fft(audio3, n1);
 c3=abs(audio_fft3);
 
-
+%% 
 % 定义每次 FFT 的窗口大小
 window_size = 3200;
-
 % 计算采样数据的总长度
 total_samples = length(audio2);
-
 % 计算 FFT 的次数（向下取整）
 num_fft = floor(total_samples / window_size);
 % 创建一个数组来存储每次逆FFT后的结果
 ifft_results= zeros(length(audio1), 1);
-sum_ifft_results1= zeros(window_size, 1);
 sum_ifft_results2= zeros(window_size, 1);
-s = zeros(3200, 1);
-a = zeros(3200,1);
-b = zeros(3200,1);
-% 对每次 FFT 进行循环
+sum_ifft_results3= zeros(window_size, 1);
+real_result = zeros(3200, 1);           % 用于存储每次逆FFT处理后的实部结果
+comparison_result = zeros(3200,1);      % 用于标记每个频率分量是否为噪声（1 表示是噪声，0 表示不是）
+
+% 噪声
 for i = 1:num_fft
     % 获取当前窗口的采样数据
     start_index = (i - 1) * window_size + 1;
@@ -61,9 +67,10 @@ for i = 1:num_fft
     
     % 对当前窗口的采样数据进行 FFT
     fft_result = fft(window_data);
-    sum_ifft_results1 = sum_ifft_results1 + abs(fft_result);
+    sum_ifft_results2 = sum_ifft_results2 + abs(fft_result);
 end
 
+% 人声
 for i = 1:num_fft
     % 获取当前窗口的采样数据
     start_index = (i - 1) * window_size + 1;
@@ -72,17 +79,17 @@ for i = 1:num_fft
     
     % 对当前窗口的采样数据进行 FFT
     fft_result = fft(window_data);
-    sum_ifft_results2 = sum_ifft_results2 + abs(fft_result);
-end
-%对应的频率分量比大小
-for j=1:3200
-    
-    if sum_ifft_results2(j)<sum_ifft_results1(j)
-        b(j)=1;
-    end
-    
+    sum_ifft_results3 = sum_ifft_results3 + abs(fft_result);
 end
 
+% 两组对应的频率分量比较，噪声高于人声往矩阵里写入 1
+for j=1:3200
+    if sum_ifft_results3(j)<sum_ifft_results2(j)
+        comparison_result(j)=1;
+    end
+end
+
+% 对原始文件的数据序列处理
 for i = 1:num_fft-2
     % 获取当前窗口的采样数据
     start_index = (i - 1) * window_size + 1;
@@ -92,22 +99,20 @@ for i = 1:num_fft-2
     % 对当前窗口的采样数据进行 FFT
     fft_result = fft(window_data);
     for j=1:3200
-        if b(j)==1
-            fft_result(j)=0;  %噪音频率分量置0
+        if comparison_result(j) == 1
+            fft_result(j)=0;            % 噪音频率分量置0
         end
     end
-    s = real(ifft(fft_result));
+    real_result = real(ifft(fft_result));
     % 将逆FFT结果放入数组中
-    ifft_results(start_index:end_index) = s(1:3200);
-    % 在这里进行你想要的操作，例如获取幅度谱、相位谱等
-    
-    % 注意：在这里仅显示示例，实际情况下你可能会进行更多的处理
-    
-    % 每次 FFT 的结果，可以在这里进行进一步处理或保存
+    ifft_results(start_index:end_index) = real_result(1:3200);
 end
-sound(ifft_results,fs1);
-audiowrite('output_final.wav',ifft_results, fs1);
-% 绘制频谱对比
+
+%% 输出最终结果
+% sound(ifft_results,fs1);
+audiowrite(posted_file, ifft_results, fs1);
+
+%% 绘制频谱对比
 figure;
 subplot(4,2, 1);
 plot(audio1);
