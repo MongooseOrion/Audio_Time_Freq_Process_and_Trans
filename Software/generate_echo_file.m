@@ -5,7 +5,7 @@ raw_file_path = '../Sample/人声分离测试音频样本.m4a';
 [digital_simple,fs] = audioread(raw_file_path); 
 
 %% 对原始数字信号序列进行运算
-digital_simple = digital_simple(:,1);       % 取单声道，直接用双声道图像会重叠
+digital_simple = digital_simple(:,1);       % 取单声道，直接用双声道可能会混叠
 window_range = 16000;                       % 定义要制造回声的样本数
 delay_matrix = zeros(window_range,1);       % 创建全零矩阵以延迟
 process_range_1 = [digital_simple;delay_matrix];

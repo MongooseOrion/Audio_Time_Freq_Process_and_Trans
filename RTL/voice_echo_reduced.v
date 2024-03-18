@@ -27,7 +27,7 @@
 //
 `timescale 1ns/1ns
 module voice_echo_reduced #(  
-    parameter signed threshold_hign = 17'b01000000000000000, 
+    parameter signed threshold_high = 17'b01000000000000000, 
     parameter signed threshold_low  = 17'b10000000000000000, 
     parameter DATA_WIDTH = 8
 )
@@ -64,7 +64,7 @@ begin
     if(~rst_n) begin
         data_out <= 'd0;
     end
-    else if ((data_in - (rd_data/2))>=threshold_hign) begin
+    else if ((data_in - (rd_data/2))>=threshold_high) begin
         data_out <= 16'b0111111111111111;
     end
     else if ((data_in - (rd_data/2))<=threshold_low) begin
