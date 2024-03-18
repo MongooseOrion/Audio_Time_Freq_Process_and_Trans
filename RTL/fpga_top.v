@@ -186,7 +186,7 @@ tone_aujusted #(
     .DATA_WIDTH     (16)
 )u_tone_adjusted (
     .rst_n          (adc_dac_int),// input
-    .clk            (clk_50M    ),
+    .process_clk    (clk_50M    ),
     .sck            (es1_dlrc   ),// input
     .ldata_out      (ldata_out1      ),// output[15:0]
     .rdata_out      (rdata_out1      ),// output[15:0]
