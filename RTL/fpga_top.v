@@ -28,6 +28,7 @@
 module fpga_top(    
     input               sys_clk             ,//50MHz
     input               sys_rst             ,
+    
     // ES7243E ADC_in
     output              es7243_scl          ,//CCLK
     inout               es7243_sda          ,//CDATA
@@ -35,6 +36,7 @@ module fpga_top(
     input               es0_sdin            ,//SDOUT i2s数据输入             i2s_sdin
     input               es0_dsclk           ,//SCLK  i2s数据时钟             i2s_sck   
     input               es0_alrck           ,//LRCK  i2s数据左右信道帧时钟     i2s_ws
+    
     // ES8156 DAC_out
     output              es8156_scl          ,//CCLK
     inout               es8156_sda          ,//CDATA 
@@ -43,13 +45,17 @@ module fpga_top(
     output              es1_sdout           ,//SDIN  DAC i2s数据输出          i2s_sdout
     input               es1_dsclk           ,//SCLK  i2s数据位时钟            i2s_sck
     input               es1_dlrc            ,//LRCK  i2s数据左右信道帧时钟      i2s_ws
-    //  
-    input               lin_test,//麦克风插入检测
-    input               lout_test,//扬声器检测
+    
+    // 检测相关
+    input               lin_test            ,//麦克风插入检测
+    input               lout_test           ,//扬声器检测
     output              lin_led,
     output              lout_led,   
-    
-    output              adc_dac_int
+    output              codec_init,
+
+    // UART
+    input               uart_rx,
+    output              uart_tx
 );
 
 
@@ -72,16 +78,32 @@ wire [15:0]     rdata       ;
 
 assign lin_led = lin_test ? 1'b0 : 1'b1;
 assign lout_led = lout_test ? 1'b0 : 1'b1;
-assign adc_dac_int = es7243_init && es8156_init;
+assign codec_init = es7243_init && es8156_init;
 
 
 //
 // 全局时钟信号
 sys_pll u_sys_pll (
     .clkin1       (sys_clk   ),   // input//50MHz
+    .pll_rst      (sys_rst   ),
     .pll_lock     (locked    ),   // output
     .clkout0      (clk_12M   ),   // output//12.288MHz
     .clkout1      (clk_50M   )
+);
+
+
+//
+// uart 信号输入
+uart_trans ctrl_command_trans(
+    .clk                    (clk_50M    ),
+    .rst                    (sys_rst    ),
+    .uart_rx                (uart_rx    ),
+    .uart_tx                (uart_tx    ),
+    .command_in             (),  // 用于板上回传信号
+    .command_in_flag        (),
+    .ctrl_command_out       (ctrl_command ),
+    .value_command_out      (value_command),
+    .command_out_flag       ()
 );
 
 
@@ -158,7 +180,7 @@ pgr_i2s_tx #(
 i2s_loop #(
     .DATA_WIDTH     (16)
 )u_i2s_loop (
-    .rst_n          (adc_dac_int),// input
+    .rst_n          (codec_init ),// input
     .sck            (es0_dsclk  ),// input
     .ldata          (ldata      ),// output[15:0]
     .rdata          (rdata      ),// output[15:0]
@@ -173,7 +195,7 @@ i2s_loop #(
 voice_echo_reduced #(
     .DATA_WIDTH     (16)
 )u_voice_echo_reduced (
-    .rst_n          (adc_dac_int),// input
+    .rst_n          (codec_init ),// input
     .sck            (es1_dlrc   ),// input
     .data_out       (ldata_out  ),// output[15:0]
     .data_in        (ldata      )// input[15:0]
@@ -185,7 +207,7 @@ voice_echo_reduced #(
 tone_aujusted #(
     .DATA_WIDTH     (16)
 )u_tone_adjusted (
-    .rst_n          (adc_dac_int),// input
+    .rst_n          (codec_init),// input
     .process_clk    (clk_50M    ),
     .sck            (es1_dlrc   ),// input
     .ldata_out      (ldata_out1      ),// output[15:0]
@@ -193,6 +215,15 @@ tone_aujusted #(
     .rdata_in       (rdata      ),// input[15:0]      //音色改变处理
     .ldata_in       (ldata      )// input[15:0]
 );
+
+
+// 
+// 背景声和人声分离，并去除噪声
+
+
+
+//
+// 音频元数据 UDP 发送
 
 
 endmodule
