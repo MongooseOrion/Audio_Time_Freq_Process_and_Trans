@@ -60,8 +60,15 @@ module fpga_top(
 
 
 reg  [19:0]     rstn_1ms    ;
+reg             tone_aujusted_enable;
+reg             echo_reduced_enable;
+reg             backgm_reduced_enable;
+reg             voice_recog_enable;
+reg             ethernet_trans_enable;
 
 wire            locked      ;
+wire [3:0]      ctrl_command;
+wire [3:0]      value_command;
 wire            rstn_out    ;
 wire            es7243_init ;
 wire            es8156_init ;
@@ -105,6 +112,62 @@ uart_trans ctrl_command_trans(
     .value_command_out      (value_command),
     .command_out_flag       ()
 );
+
+
+//
+// 功能控制
+always @(posedge sys_clk or negedge sys_rst) begin
+    if(!sys_rst) begin
+        tone_aujusted_enable <= 1'b0;
+        echo_reduced_enable <= 1'b0;
+        backgm_reduced_enable <= 1'b0;
+        voice_recog_enable <= 1'b0;
+        ethernet_trans_enable <= 1'b0;
+    end
+    else begin
+        if(ctrl_command == 4'b0010) begin
+            if(value_command == 4'b0001) begin
+                echo_reduced_enable <= 1'b0;
+                backgm_reduced_enable <= 1'b0;
+                voice_recog_enable <= 1'b0;
+                tone_aujusted_enable <= 1'b1;
+            end
+            else if(value_command == 4'b0010) begin
+                backgm_reduced_enable <= 1'b0;
+                tone_aujusted_enable <= 1'b0;
+                voice_recog_enable <= 1'b0;
+                echo_reduced_enable <= 1'b1;
+            end
+            else if(value_command == 4'b0010) begin
+                tone_aujusted_enable <= 1'b0;
+                echo_reduced_enable <= 1'b0;
+                voice_recog_enable <= 1'b0;
+                backgm_reduced_enable <= 1'b1;
+            end
+            else begin
+                tone_aujusted_enable <= 1'b0;
+                echo_reduced_enable <= 1'b0;
+                voice_recog_enable <= 1'b0;
+                backgm_reduced_enable <= 1'b0;
+            end
+        end
+        else if((ctrl_command == 4'b0100) || (ctrl_command == 4'b1000)) begin
+            tone_aujusted_enable <= 1'b0;
+            echo_reduced_enable <= 1'b0;
+            voice_recog_enable <= 1'b0;
+            ethernet_trans_enable <= 1'b1;
+        end
+        else if(ctrl_command == 4'b1001) begin
+            voice_recog_enable <= 1'b1;
+        end
+        else begin
+            tone_aujusted_enable <= 1'b0;
+            echo_reduced_enable <= 1'b0;
+            backgm_reduced_enable <= 1'b0;
+            voice_recog_enable <= 1'b0;
+        end
+    end
+end
 
 
 // 
@@ -224,6 +287,8 @@ tone_aujusted #(
 
 //
 // 音频元数据 UDP 发送
-
+eth_trans u_eth_trans(
+    
+);
 
 endmodule
