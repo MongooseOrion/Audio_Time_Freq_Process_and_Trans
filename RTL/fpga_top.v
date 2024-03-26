@@ -76,8 +76,6 @@ wire            clk_12M     ;
 wire [15:0]     rx_data     ;
 wire            rx_l_vld    ;
 wire            rx_r_vld    ;
-wire [15:0]     ldata_out1  ;
-wire [15:0]     rdata_out1  ;
 wire [15:0]     ldata_out   ;
 wire [15:0]     rdata_out   ;
 wire [15:0]     ldata       ;
@@ -258,7 +256,7 @@ i2s_loop #(
 voice_echo_reduced #(
     .DATA_WIDTH     (16)
 )u_voice_echo_reduced (
-    .rst_n          (codec_init ),// input
+    .rst_n          (codec_init && echo_reduced_enable),// input
     .sck            (es1_dlrc   ),// input
     .data_out       (ldata_out  ),// output[15:0]
     .data_in        (ldata      )// input[15:0]
@@ -270,11 +268,11 @@ voice_echo_reduced #(
 tone_aujusted #(
     .DATA_WIDTH     (16)
 )u_tone_adjusted (
-    .rst_n          (codec_init),// input
+    .rst_n          (codec_init && tone_aujusted_enable),// input
     .process_clk    (clk_50M    ),
     .sck            (es1_dlrc   ),// input
-    .ldata_out      (ldata_out1      ),// output[15:0]
-    .rdata_out      (rdata_out1      ),// output[15:0]
+    .ldata_out      (ldata_out     ),// output[15:0]
+    .rdata_out      (rdata_out      ),// output[15:0]
     .rdata_in       (rdata      ),// input[15:0]      //音色改变处理
     .ldata_in       (ldata      )// input[15:0]
 );

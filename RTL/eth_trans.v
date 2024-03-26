@@ -2,16 +2,13 @@
 module eth_trans (
 
     input                       sys_clk,                    // 50MHz
-    //input                       key,
     input                       rst_n,
     input                       rst_n_test,
     output                      led,
-    // 输入图像数据
-    input           vin_clk,
-    input [7:0]     vin_data,
-    //input           vin_pclk,
-    input           vin_vsync,
-    input           vin_hsync,
+    
+    // 输入待发送数据
+    input [15:0]                ldata_in,
+    input [15:0]                rdata_in,
 
     // RJ45 网口时序
     output                      e_mdc,                      //MDIO的时钟信号，用于读写PHY的寄存器
@@ -37,19 +34,7 @@ wire            gmii_rx_clk;
 wire  [ 1:0]    speed_selection; // 1x gigabit, 01 100Mbps, 00 10mbps
 wire            duplex_mode;     // 1 full, 0 half
 
-wire [7:0]      cmos_db;
-wire            cmos_pclk;
-wire            cmos_vsync;
-wire            cmos_href;
-wire            cmos_vsync_delay;
-wire            cmos_href_delay;
-wire [7:0]      cmos_data_delay;
 
-
-assign cmos_pclk = vin_clk;
-assign cmos_href = vin_hsync;
-assign cmos_vsync = vin_vsync;
-assign cmos_db = vin_data;
 
 //MDIO config
 assign speed_selection = 2'b10;
@@ -84,32 +69,21 @@ util_gmii_to_rgmii util_gmii_to_rgmii_m0(
 	);
 
 
-camera_delay camera_delay_inst(
-   .cmos_pclk          (cmos_pclk),              //cmos pxiel clock
-   .cmos_href          (cmos_href),              //cmos hsync refrence
-   .cmos_vsync         (cmos_vsync),             //cmos vsync
-   .cmos_data          (cmos_db),              //cmos data
-
-   .cmos_href_delay    (cmos_href_delay),              //cmos hsync refrence
-   .cmos_vsync_delay   (cmos_vsync_delay),             //cmos vsync
-   .cmos_data_delay    (cmos_data_delay)             //cmos data
-) ;
-
 //////////////////// CMOS FIFO/////////////////// 
 wire [10:0] fifo_data_count;
 wire [7:0]  fifo_data;
 wire        fifo_rd_en;
 
-camera_fifo camera_fifo_inst(
-    .wr_clk             (cmos_pclk),
-    .wr_rst             (cmos_vsync),
-    .wr_en              (cmos_href_delay),
-    .wr_data            (cmos_data_delay),
+udp_tx_buffer udp_tx_fifo(
+    .wr_clk             (sys_clk),
+    .wr_rst             (!rst_n),
+    .wr_en              (rst_n),
+    .wr_data            (data),
     .wr_full            (),
     .wr_water_level     (),
     .almost_full        (),
     .rd_clk             (gmii_rx_clk),
-    .rd_rst             (cmos_vsync),
+    .rd_rst             (!rst),
     .rd_en              (fifo_rd_en),
     .rd_data            (fifo_data),
     .rd_empty           (),

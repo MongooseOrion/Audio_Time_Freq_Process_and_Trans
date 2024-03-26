@@ -24,7 +24,7 @@ module mac_tx_top
          input                arp_request_req,
          
          input [7:0]          fifo_data,                //FIFO中的数据
-         output               fifo_rd_en,            //FIFO读使�?
+         output               fifo_rd_en,            //FIFO读使�?
          
          input  [7:0]         ram_wr_data,
          input                ram_wr_en,
