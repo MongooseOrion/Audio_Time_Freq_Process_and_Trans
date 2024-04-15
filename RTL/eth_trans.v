@@ -3,7 +3,6 @@ module eth_trans (
 
     input                       sys_clk,                    // 50MHz
     input                       rst_n,
-    input                       rst_n_test,
     output                      led,
     
     // 输入待发送数据
@@ -22,6 +21,7 @@ module eth_trans (
     input                       rgmii_rxc                   //125Mhz ethernet gmii rx clock    
 );
 
+wire  [15:0]    wr_data;
 wire   [ 7:0]   gmii_txd;
 wire            gmii_tx_en;
 wire            gmii_tx_er;
@@ -35,49 +35,7 @@ wire            gmii_rx_clk;
 wire  [ 1:0]    speed_selection; // 1x gigabit, 01 100Mbps, 00 10mbps
 wire            duplex_mode;     // 1 full, 0 half
 
-
-// 存储左右声道数据
-lr_data_fifo left_data_fifo(
-    .wr_clk             (sck),
-    .wr_rst             (!rst_n),
-    .wr_en              (rst_n),
-    .wr_data            (ldata_in),
-    .wr_full            (),
-    .wr_water_level     (),
-    .almost_full        (),
-    .rd_clk             (),
-    .rd_rst             (),
-    .rd_en              (),
-    .rd_data            (),
-    .rd_empty           (),
-    .rd_water_level     (),
-    .almost_empty       ()
-);
-
-lr_data_fifo right_data_fifo(
-    .wr_clk             (sck),
-    .wr_rst             (!rst_n),
-    .wr_en              (rst_n),
-    .wr_data            (rdata_in),
-    .wr_full            (),
-    .wr_water_level     (),
-    .almost_full        (),
-    .rd_clk             (),
-    .rd_rst             (),
-    .rd_en              (),
-    .rd_data            (),
-    .rd_empty           (),
-    .rd_water_level     (),
-    .almost_empty       ()
-);
-
-
-// 取数据逻辑
-always @(posedge sys_clk or negedge rst_n) begin
-    if(!rst_n) begin
-
-    end
-end
+assign wr_data = sck ? ldata_in : rdata_in;
 
 
 // MDIO config
@@ -119,15 +77,15 @@ wire [7:0]  fifo_data;
 wire        fifo_rd_en;
 
 udp_tx_buffer udp_tx_fifo(
-    .wr_clk             (sys_clk),
+    .wr_clk             (sck),
     .wr_rst             (!rst_n),
-    .wr_en              (),
-    .wr_data            (data),
+    .wr_en              (rst_n),
+    .wr_data            (wr_data),
     .wr_full            (),
     .wr_water_level     (),
     .almost_full        (),
     .rd_clk             (gmii_rx_clk),
-    .rd_rst             (!rst),
+    .rd_rst             (!rst_n),
     .rd_en              (fifo_rd_en),
     .rd_data            (fifo_data),
     .rd_empty           (),
