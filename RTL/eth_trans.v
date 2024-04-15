@@ -7,6 +7,7 @@ module eth_trans (
     output                      led,
     
     // 输入待发送数据
+    input                       sck,
     input [15:0]                ldata_in,
     input [15:0]                rdata_in,
 
@@ -35,8 +36,51 @@ wire  [ 1:0]    speed_selection; // 1x gigabit, 01 100Mbps, 00 10mbps
 wire            duplex_mode;     // 1 full, 0 half
 
 
+// 存储左右声道数据
+lr_data_fifo left_data_fifo(
+    .wr_clk             (sck),
+    .wr_rst             (!rst_n),
+    .wr_en              (rst_n),
+    .wr_data            (ldata_in),
+    .wr_full            (),
+    .wr_water_level     (),
+    .almost_full        (),
+    .rd_clk             (),
+    .rd_rst             (),
+    .rd_en              (),
+    .rd_data            (),
+    .rd_empty           (),
+    .rd_water_level     (),
+    .almost_empty       ()
+);
 
-//MDIO config
+lr_data_fifo right_data_fifo(
+    .wr_clk             (sck),
+    .wr_rst             (!rst_n),
+    .wr_en              (rst_n),
+    .wr_data            (rdata_in),
+    .wr_full            (),
+    .wr_water_level     (),
+    .almost_full        (),
+    .rd_clk             (),
+    .rd_rst             (),
+    .rd_en              (),
+    .rd_data            (),
+    .rd_empty           (),
+    .rd_water_level     (),
+    .almost_empty       ()
+);
+
+
+// 取数据逻辑
+always @(posedge sys_clk or negedge rst_n) begin
+    if(!rst_n) begin
+
+    end
+end
+
+
+// MDIO config
 assign speed_selection = 2'b10;
 assign duplex_mode = 1'b1;
 
@@ -77,7 +121,7 @@ wire        fifo_rd_en;
 udp_tx_buffer udp_tx_fifo(
     .wr_clk             (sys_clk),
     .wr_rst             (!rst_n),
-    .wr_en              (rst_n),
+    .wr_en              (),
     .wr_data            (data),
     .wr_full            (),
     .wr_water_level     (),
