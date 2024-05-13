@@ -4,11 +4,11 @@ module eth_trans (
     input                       sys_clk,                    // 50MHz
     input                       rst_n,
     output                      led,
-    
-    // 输入待发送数据
-    input                       sck,
-    input [15:0]                ldata_in,
-    input [15:0]                rdata_in,
+    // 输入数据
+    input           vin_clk/*synthesis PAP_MARK_DEBUG="1"*/,
+    input           vin_sck/*synthesis PAP_MARK_DEBUG="1"*/,
+    input [16:0]    vin_ldata,
+    input [16:0]    vin_rdata,
 
     // RJ45 网口时序
     output                      e_mdc,                      //MDIO的时钟信号，用于读写PHY的寄存器
@@ -21,7 +21,6 @@ module eth_trans (
     input                       rgmii_rxc                   //125Mhz ethernet gmii rx clock    
 );
 
-wire  [15:0]    wr_data;
 wire   [ 7:0]   gmii_txd;
 wire            gmii_tx_en;
 wire            gmii_tx_er;
@@ -35,12 +34,31 @@ wire            gmii_rx_clk;
 wire  [ 1:0]    speed_selection; // 1x gigabit, 01 100Mbps, 00 10mbps
 wire            duplex_mode;     // 1 full, 0 half
 
-assign wr_data = sck ? ldata_in : rdata_in;
+wire            voice_vsync;
+wire            voice_href;
+wire [7:0]      voice_ldata;
+wire            voice_vsync_delay;
+wire            voice_href_delay;
+wire [7:0]      voice_ldata_delay;
 
 
-// MDIO config
+
+//MDIO config
 assign speed_selection = 2'b10;
 assign duplex_mode = 1'b1;
+
+
+voice_trans_cache u_voice_trans_cache(
+    .sck                    (vin_sck),
+    .dlrc                   (vin_clk),
+    .rst                    (rst_n),
+    .ldata_in               (vin_ldata),
+    .rdata_in               (),
+    .voice_href             (voice_href),
+    .voice_vsync            (voice_vsync),
+    .ldata_out              (voice_ldata),
+    .rdata_out              ()
+);
 
 
 util_gmii_to_rgmii util_gmii_to_rgmii_m0(
@@ -71,21 +89,32 @@ util_gmii_to_rgmii util_gmii_to_rgmii_m0(
 	);
 
 
-//////////////////// CMOS FIFO/////////////////// 
-wire [10:0] fifo_data_count;
-wire [7:0]  fifo_data;
-wire        fifo_rd_en;
+camera_delay signal_delay_inst(
+   .cmos_pclk          (vin_sck),              //cmos pxiel clock
+   .cmos_href          (voice_href),              //cmos hsync refrence
+   .cmos_vsync         (voice_vsync),             //cmos vsync
+   .cmos_data          (voice_ldata),              //cmos data
 
-udp_tx_buffer udp_tx_fifo(
-    .wr_clk             (sck),
-    .wr_rst             (!rst_n),
-    .wr_en              (rst_n),
-    .wr_data            (wr_data),
+   .cmos_href_delay    (voice_href_delay),              //cmos hsync refrence
+   .cmos_vsync_delay   (voice_vsync_delay),             //cmos vsync
+   .cmos_data_delay    (voice_ldata_delay)             //cmos data
+) ;
+
+//////////////////// CMOS FIFO/////////////////// 
+wire [10:0] fifo_data_count/*synthesis PAP_MARK_DEBUG="1"*/;
+wire [7:0]  fifo_data;
+wire        fifo_rd_en/*synthesis PAP_MARK_DEBUG="1"*/;
+
+pre_trans_fifo u_pre_trans_fifo(
+    .wr_clk             (vin_sck),
+    .wr_rst             (voice_vsync),
+    .wr_en              (voice_href_delay),
+    .wr_data            (voice_ldata_delay), // addr: [11:0], data: [7:0]
     .wr_full            (),
     .wr_water_level     (),
     .almost_full        (),
     .rd_clk             (gmii_rx_clk),
-    .rd_rst             (!rst_n),
+    .rd_rst             (voice_vsync),
     .rd_en              (fifo_rd_en),
     .rd_data            (fifo_data),
     .rd_empty           (),
@@ -98,8 +127,8 @@ mac_test mac_top (
  .gmii_rx_clk            (gmii_rx_clk        ) ,
  .rst_n                  (rst_n              ),
  
- .cmos_vsync              (cmos_vsync        ),
- .cmos_href               (cmos_href         ),
+ .cmos_vsync              (voice_vsync       ),
+ .cmos_href               (voice_href        ),
  .reg_conf_done           (reg_conf_done     ),
  .fifo_data               (fifo_data         ),         
  .fifo_data_count         (fifo_data_count   ),            

@@ -109,7 +109,7 @@ begin
 					      state <= WAIT_SYNC ;
 				     end
   CHECK_FIFO   :  begin
-                   if (fifo_rdusedw > 11'd1000)
+                   if (fifo_rdusedw > 11'd1022)
 					      state <= GEN_REQ     ;
 					    else if (wait_cnt== 32'd125_000_000)
 						   state <= WAIT_SYNC     ;

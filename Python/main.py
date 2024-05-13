@@ -23,18 +23,17 @@
 * FILE ENCODER TYPE: UTF-8
 * ========================================================================
 '''
-# 使用串口控制功能
+# 主处理程序
+import func_ctrl as fc
 
-import serial
+# 文件路径
+sound_model_file = '../model/sound_classification.h5'
+sound_classes = '../model/classes.txt'
 
-# 打开串口
-ser = serial.Serial(port='COM19', baudrate=9600, timeout=1)
+emotion_model_file = '../model/emotion_voice_detection.h5'
+emotion_model_config = '../model/model.json'
+emotion_classes = '../model/Predictions.csv'
 
-# 将数据转换为十六进制格式
-hex_data = format(data, '02x')
-
-# 发送数据
-ser.write(bytearray.fromhex(hex_data))
-# 关闭串口
-ser.close()
-print(f"成功发送数据: {hex_data}")
+#fc.sound_classify_predict(sound_model_file, sound_classes)
+#fc.emotion_gender_classify_predict(emotion_model_file, emotion_model_config, emotion_classes)
+fc.audio_play()
