@@ -49,22 +49,33 @@ module fpga_top(
     // 检测相关
     input               lin_test            ,//麦克风插入检测
     input               lout_test           ,//扬声器检测
-    output              lin_led,
-    output              lout_led,   
-    output              codec_init,
+    output              lin_led             ,
+    output              lout_led            ,   
+    output              codec_init          ,
 
     // UART
-    input               uart_rx,
-    output              uart_tx
+    input               uart_rx             ,
+    output              uart_tx             ,
+
+    // 网口
+    output                      e_mdc                               ,//MDIO的时钟信号，用于读写PHY的寄存器
+    inout                       e_mdio                              ,//MDIO的数据信号，用于读写PHY的寄存器  
+    output [3:0]                rgmii_txd                           ,//RGMII 发送数据
+    output                      rgmii_txctl                         ,//RGMII 发送有效信号
+    output                      rgmii_txc                           ,//125Mhz ethernet rgmii tx clock
+    input    [3:0]              rgmii_rxd                           ,//RGMII 接收数据
+    input                       rgmii_rxctl                         ,//RGMII 接收数据有效信号
+    input                       rgmii_rxc                           ,//125Mhz ethernet rgmii RX clock
+    output                      eth_init
 );
 
 
-reg  [19:0]     rstn_1ms    ;
-reg             tone_aujusted_enable;
-reg             echo_reduced_enable;
-reg             backgm_reduced_enable;
-reg             voice_recog_enable;
-reg             ethernet_trans_enable;
+reg  [19:0]     rstn_1ms                ;
+reg             tone_aujusted_enable    ;
+reg             echo_reduced_enable     ;
+reg             backgm_reduced_enable   ;
+reg             voice_recog_enable      ;
+reg             ethernet_trans_enable   ;
 
 wire            locked      ;
 wire [3:0]      ctrl_command;
@@ -90,7 +101,7 @@ assign codec_init = es7243_init && es8156_init;
 // 全局时钟信号
 sys_pll u_sys_pll (
     .clkin1       (sys_clk   ),   // input//50MHz
-    .pll_rst      (sys_rst   ),
+    .pll_rst      (!sys_rst   ),
     .pll_lock     (locked    ),   // output
     .clkout0      (clk_12M   ),   // output//12.288MHz
     .clkout1      (clk_50M   )
@@ -229,9 +240,9 @@ pgr_i2s_tx #(
     .ws             (es1_dlrc       ),// input  //LRCK  i2s数据左右信道帧时钟 
     .sda            (es1_sdout      ),// output //SDIN  DAC i2s数据输出
 
-    .ldata          (ldata_out          ),// input[15:0]
+    .ldata          (ldata          ),// input[15:0]
     .l_req          (          ),// output
-    .rdata          (ldata_out          ),// input[15:0]
+    .rdata          (ldata          ),// input[15:0]
     .r_req          (          ) // output
 );
 
@@ -258,7 +269,7 @@ voice_echo_reduced #(
 )u_voice_echo_reduced (
     .rst_n          (codec_init && echo_reduced_enable),// input
     .sck            (es1_dlrc   ),// input
-    .data_out       (ldata_out  ),// output[15:0]
+    .data_out       (  ),// output[15:0]
     .data_in        (ldata      )// input[15:0]
 );
 
@@ -271,8 +282,8 @@ tone_aujusted #(
     .rst_n          (codec_init && tone_aujusted_enable),// input
     .process_clk    (clk_50M    ),
     .sck            (es1_dlrc   ),// input
-    .ldata_out      (ldata_out     ),// output[15:0]
-    .rdata_out      (rdata_out      ),// output[15:0]
+    .ldata_out      (     ),// output[15:0]
+    .rdata_out      (      ),// output[15:0]
     .rdata_in       (rdata      ),// input[15:0]      //音色改变处理
     .ldata_in       (ldata      )// input[15:0]
 );
@@ -286,7 +297,22 @@ tone_aujusted #(
 //
 // 音频元数据 UDP 发送
 eth_trans u_eth_trans(
-    
+    .sys_clk        (clk_50M    ),
+    .rst_n          (rstn_out   ),
+    .led            (eth_init   ),
+
+    .vin_clk        (es1_dlrc   ),
+    .vin_sck        (es1_dsclk  ),
+    .vin_ldata      (ldata      ),
+
+    .e_mdc          (e_mdc),
+    .e_mdio         (e_mdio),
+    .rgmii_txd      (rgmii_txd),
+    .rgmii_txctl    (rgmii_txctl),
+    .rgmii_txc      (rgmii_txc),
+    .rgmii_rxd      (rgmii_rxd),
+    .rgmii_rxctl    (rgmii_rxctl),
+    .rgmii_rxc      (rgmii_rxc)
 );
 
 endmodule
