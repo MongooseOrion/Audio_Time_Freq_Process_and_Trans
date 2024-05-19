@@ -1,0 +1,11 @@
+speaker_1
+speaker_2
+speaker_3
+speaker_4
+speaker_5
+speaker_6
+speaker_7
+speaker_8
+speaker_9
+speaker_A
+speaker_B
