@@ -28,12 +28,20 @@ import func_ctrl as fc
 
 # 文件路径
 sound_model_file = '../model/sound_classification.h5'
-sound_classes = '../model/classes.txt'
+sound_classes = '../model/sound_classes.txt'
 
 emotion_model_file = '../model/emotion_voice_detection.h5'
 emotion_model_config = '../model/model.json'
 emotion_classes = '../model/Predictions.csv'
 
-#fc.sound_classify_predict(sound_model_file, sound_classes)
+voice_classify_model_file = '../model/voice_classification.h5'
+voice_classify_classes_file = '../model/voice_classify_classes.txt'
+
+voice_adjusted_recog_model_file = '../model/voice_adjusted_recog.h5'
+voice_adjusted_recog_classes_file = '../model/voice_adjusted_recog_classes.txt'
+
+#fc.classify_recog_predict(sound_model_file, sound_classes)
+fc.classify_recog_predict(voice_classify_model_file, voice_classify_classes_file)
+#fc.classify_recog_predict(voice_adjusted_recog_model_file, voice_adjusted_recog_classes_file)
 #fc.emotion_gender_classify_predict(emotion_model_file, emotion_model_config, emotion_classes)
-fc.audio_play()
+#fc.audio_play()

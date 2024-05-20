@@ -142,7 +142,7 @@ def audio_decode(num_samples, sample_rate = 48000, time = 2):
 
 
 
-def sound_classify_predict(model_path, class_file, sample_rate = 48000):
+def classify_recog_predict(model_path, class_file, sample_rate = 48000):
     '''
     对多个声音类别进行分类推理，使用 tensorflow 模型。
 
@@ -187,6 +187,7 @@ def sound_classify_predict(model_path, class_file, sample_rate = 48000):
                 recv_data = recv_data[0 : 48000*2]
 
             # 对接收到的音频数据进行分类推理
+            start_time = time.time()
             rate, wav = downsample_mono(recv_data, 16000, 2)
             mask, env = envelope(wav, rate, 20)
             clean_wav = wav[mask]
@@ -201,6 +202,8 @@ def sound_classify_predict(model_path, class_file, sample_rate = 48000):
             predicted_class = class_list[class_index]
             print(predicted_class)
             recv_data = b''
+            end_time = time.time()
+            print(f'识别时间为：{end_time-start_time}')
 
     except KeyboardInterrupt:
         print("接收停止。")
@@ -226,6 +229,7 @@ def emotion_gender_classify_predict(model_path, model_config, class_file):
     import socket
     import os
     import wave
+    import time
 
     lb = LabelEncoder()
 
@@ -268,7 +272,7 @@ def emotion_gender_classify_predict(model_path, model_config, class_file):
             # 写入音频数据到一个临时的 WAV 文件
             wav_data = np.frombuffer(recv_data, dtype=np.int16)
             rms_value = np.sqrt(np.mean(wav_data ** 2))     # 计算均方根以判定当前是否处于空闲状态
-            if(rms_value < 2): 
+            if(rms_value < 10): 
                 print(None)
                 recv_data = b''
                 continue
@@ -278,7 +282,8 @@ def emotion_gender_classify_predict(model_path, model_config, class_file):
                 wf.setsampwidth(2)  # 16位
                 wf.setframerate(48000)  # 采样率为 48kHz
                 wf.writeframes(wav_data)  
-        
+
+            start_time = time.time()
             X, sample_rate = librosa.load('received_audio.wav', res_type='kaiser_fast',duration=2.5,sr=48000,offset=0.5)
             sample_rate = np.array(sample_rate)
             mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=13),axis=0)
@@ -292,9 +297,12 @@ def emotion_gender_classify_predict(model_path, model_config, class_file):
             livepreds1=livepreds.argmax(axis=1)
             liveabc = livepreds1.astype(int).flatten()
             livepredictions = (lb.inverse_transform((liveabc)))
-            print(livepredictions)
+            gender, emotion = livepredictions[0].split('_')
+            print(gender, emotion)
             os.remove('received_audio.wav')
             recv_data = b''
+            end_time = time.time()
+            print(f'计算时间为：{end_time-start_time}')
 
     except KeyboardInterrupt:
             sock.close()
