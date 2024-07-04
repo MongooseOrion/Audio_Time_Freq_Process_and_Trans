@@ -5,11 +5,13 @@
 ## 仓库结构
 
 ```
+|-- dataset                 // 深度学习数据集
 |-- Document                // 相关技术文档和说明
 |-- FPGA                    // 比特流文件、约束文件和 ROM 初始化文件
 |-- model                   // 深度学习模型文件
 |-- Python                  // python 代码
 |-- RTL                     // RTL 代码
+|-- Sample                  // 测试音频
 |-- Software                // Matlab 仿真代码和相关系统控制程序
 ```
 

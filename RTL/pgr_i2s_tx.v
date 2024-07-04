@@ -1,6 +1,6 @@
-//
-// i2s_tx
-//
+//******************************************************************
+
+//******************************************************************
 `timescale 1ns/1ns
 module pgr_i2s_tx
 #(
@@ -21,7 +21,7 @@ module pgr_i2s_tx
 reg     [DATA_WIDTH - 1:0]  sr;
 wire    [DATA_WIDTH - 1:0]  data;
 
-assign sda = sr[DATA_WIDTH - 1];
+assign sda = sr[DATA_WIDTH - 1]; //送sr最高位
 
 reg [1:0]   ws_d;
 wire        ws_e;
@@ -40,7 +40,7 @@ end
 
 assign ws_e = ^ws_d;
 
-assign data = ws_d[0] ? rdata : ldata;
+assign data = ws_d[0] ? rdata : ldata; //在ws时序下把对应的左右通道对应的数据送出去
 
 always @(negedge sck or negedge rst_n)
 begin
@@ -49,7 +49,7 @@ begin
     else if(ws_e)
         sr <= data;
     else
-        sr <= {sr[DATA_WIDTH - 2:0],1'b0};
+        sr <= {sr[DATA_WIDTH - 2:0],1'b0}; //sr左移
 end
 
 assign r_req = ws_e & ws_d[0];

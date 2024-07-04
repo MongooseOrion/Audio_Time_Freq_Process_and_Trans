@@ -1,38 +1,15 @@
-/* =======================================================================
-* Copyright (c) 2023, MongooseOrion.
-* All rights reserved.
-*
-* The following code snippet may contain portions that are derived from
-* OPEN-SOURCE communities, and these portions will be licensed with: 
-*
-* <GPLv3.0 pango>
-*
-* If there is no OPEN-SOURCE licenses are listed, it indicates none of
-* content in this Code document is sourced from OPEN-SOURCE communities. 
-*
-* In this case, the document is protected by copyright, and any use of
-* all or part of its content by individuals, organizations, or companies
-* without authorization is prohibited, unless the project repository
-* associated with this document has added relevant OPEN-SOURCE licenses
-* by github.com/MongooseOrion. 
-*
-* Please make sure using the content of this document in accordance with 
-* the respective OPEN-SOURCE licenses. 
-* 
-* THIS CODE IS PROVIDED BY https://github.com/MongooseOrion. 
-* FILE ENCODER TYPE: GBK
-* ========================================================================
-*/
-// ES7243E 中寄存器的配置程序
-// 
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////////
+//ES7243E中寄存器的配置程序
  module ES7243E_reg_config(     
 	input       clk_12M         ,
 	input       rstn            ,
 	output      reg_conf_done   ,
 	output      i2c_sclk        ,
 	inout       i2c_sdat        ,
-    output  reg    clock_i2c        
+    output      clock_i2c        
 );
 
      reg [15:0]clock_cnt;
@@ -41,6 +18,7 @@
      reg [15:0]reg_data;
      reg start/*synthesis PAP_MARK_DEBUG="1"*/;
 	 reg reg_conf_done_reg;
+     reg clock_i2c/*synthesis PAP_MARK_DEBUG="1"*/;
      reg [8:0]reg_index/*synthesis PAP_MARK_DEBUG="1"*/;
 	  
      i2c_com u_i2c_com(
@@ -107,7 +85,7 @@ begin
 always@(reg_index)   
  begin
     case(reg_index)
-	 0  :reg_data    <=16'h1000 ;//:V1000@
+	 0  :reg_data    <=16'h1000 ;//:V1000@//Version  2023.5.17 罗皓发的寄存器列表
 	 1  :reg_data    <=16'h013A ;//:w013A@                              
 	 2  :reg_data    <=16'h0080 ;//:w0080@
 	 3  :reg_data    <=16'h0402 ;//:w0402@
@@ -116,18 +94,18 @@ always@(reg_index)
 	 6  :reg_data    <=16'h001E ;//:w001E@
 	 7  :reg_data    <=16'h0100 ;//:w0100@
 	 8  :reg_data    <=16'h0200 ;//:w0200@
-	 9  :reg_data    <=16'h0320 ;//:w0320@			// 过采样率控制，128*f_s 默认
+	 9  :reg_data    <=16'h0320 ;//:w0320@//adc过采样控制，128*fs
 	 10 :reg_data    <=16'h0D00 ;//:w0D00@
 	 11 :reg_data    <=16'hF900 ;//:wF900@
-	 12 :reg_data    <=16'h0400 ;//:w0402@			// 无效
-	 13 :reg_data    <=16'h0401 ;//:w0401@			// 预分频：无, 预乘：2x 幅值增益
+	 12 :reg_data    <=16'h0402 ;//:w0402@
+	 13 :reg_data    <=16'h0401 ;//:w0401@ 
 	 14 :reg_data    <=16'h0500 ;//:w0500@
-	 15 :reg_data    <=16'h0607 ;//:w0607@
-	 16 :reg_data    <=16'h0700 ;//:w0700@			// 6:4==0, 3:0==LRCK divider 11:8
-	 17 :reg_data    <=16'h08FF ;//:w08FF@			// LRCK divider 7:0, mclk(12.288MHz)/0xff+1(256)==48kHz
+	 15 :reg_data    <=16'h0607 ;//:w0607@  //bclk位时钟（BCLK）：又名SClK，对应每一位（bit）数据  12288000/16
+	 16 :reg_data    <=16'h0700 ;//:w0700@ //寄存器07，08共同决定采样率，lrck表示左右声道的切换频率 即为采样频率fs=24,576,000/512
+	 17 :reg_data    <=16'h08FF ;//:w08FF@
 	 18 :reg_data    <=16'h09C5 ;//:w09C5@
 	 19 :reg_data    <=16'h0A81 ;//:w0A81@
-	 20 :reg_data    <=16'h0B0C ;//:w0B0C@			// 7:5==0, 不要静音不反相, 4:2==3(量化深度 16bit)
+	 20 :reg_data    <=16'h0B0C ;//:w0B0C@//量化位数为16位；2.设置成模式A,MSB高位在lrck上升沿的第二个sclk（es0_dsclk）上升沿可用
 	 21 :reg_data    <=16'h0EBF ;//:w0EBF@
 	 22 :reg_data    <=16'h0F80 ;//:w0F80@
 	 23 :reg_data    <=16'h140C ;//:w140C@

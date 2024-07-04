@@ -1,31 +1,8 @@
-/* =======================================================================
-* Copyright (c) 2023, MongooseOrion.
-* All rights reserved.
-*
-* The following code snippet may contain portions that are derived from
-* OPEN-SOURCE communities, and these portions will be licensed with: 
-*
-* <GPLv3.0 pango>
-*
-* If there is no OPEN-SOURCE licenses are listed, it indicates none of
-* content in this Code document is sourced from OPEN-SOURCE communities. 
-*
-* In this case, the document is protected by copyright, and any use of
-* all or part of its content by individuals, organizations, or companies
-* without authorization is prohibited, unless the project repository
-* associated with this document has added relevant OPEN-SOURCE licenses
-* by github.com/MongooseOrion. 
-*
-* Please make sure using the content of this document in accordance with 
-* the respective OPEN-SOURCE licenses. 
-* 
-* THIS CODE IS PROVIDED BY https://github.com/MongooseOrion. 
-* FILE ENCODER TYPE: GBK
-* ========================================================================
-*/
-// ES8156中寄存器的配置程序
-//
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////////
+//ES8156中寄存器的配置程序
  module ES8156_reg_config(     
 	input       clk_12M         ,
 	input       rstn            ,
@@ -111,10 +88,10 @@ always@(reg_index)
 	 1  :reg_data    <=16'h003C ;// :w003C@
 	 2  :reg_data    <=16'h0005 ;// :D0005@
 	 3  :reg_data    <=16'h001C ;// :w001C@
-	 4  :reg_data    <=16'h0205 ;// :w0205@
-	 5  :reg_data    <=16'h0301 ;// :w0301@
+	 4  :reg_data    <=16'h0205 ;// :w0205@   //时钟配置成主模式，lrck和sclk由内部产生
+	 5  :reg_data    <=16'h0301 ;// :w0301@  // lrck 03 04 寄存器共同决定发送频率，此处设置成  /512
 	 6  :reg_data    <=16'h0400 ;// :w0400@
-	 7  :reg_data    <=16'h0508 ;// :w0508@
+	 7  :reg_data    <=16'h0508 ;// :w0508@  //sclk  /16      lrck 和sclk始终保持32倍的关系，2通道*量化成16位 = 32；
 	 8  :reg_data    <=16'h0600 ;// :w0600@
 	 9  :reg_data    <=16'h0833 ;// :w0833@
 	 10 :reg_data    <=16'h1300 ;// :w1300@
