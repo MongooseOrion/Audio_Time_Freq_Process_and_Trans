@@ -1,4 +1,4 @@
-# 
+# ADC DAC
 define_attribute {p:es0_mclk} {PAP_IO_DIRECTION} {OUTPUT}
 define_attribute {p:es0_mclk} {PAP_IO_LOC} {V11}
 define_attribute {p:es0_mclk} {PAP_IO_VCCIO} {3.3}
@@ -20,8 +20,6 @@ define_attribute {p:es1_sdout} {PAP_IO_STANDARD} {LVCMOS33}
 define_attribute {p:es1_sdout} {PAP_IO_DRIVE} {8}
 define_attribute {p:es1_sdout} {PAP_IO_NONE} {TRUE}
 define_attribute {p:es1_sdout} {PAP_IO_SLEW} {SLOW}
-
-# 
 define_attribute {p:es0_alrck} {PAP_IO_DIRECTION} {INPUT}
 define_attribute {p:es0_alrck} {PAP_IO_LOC} {AB11}
 define_attribute {p:es0_alrck} {PAP_IO_VCCIO} {3.3}
@@ -950,7 +948,7 @@ define_attribute {p:mem_dqs_n[0]} {PAP_IO_NONE} {TRUE}
 define_attribute {p:mem_dqs_n[0]} {PAP_IO_SLEW} {SLOW}
 
 
-#
+# begin attribute
 create_clock -name {sys_clk} [get_ports {sys_clk}] -period {20.000} -waveform {0.000 10.000}
 create_generated_clock -name {clk_50M} -source [get_pins {u_pll/clkout1}] [get_nets {clk_50M}] -master_clock [get_clocks {sys_clk}] -multiply_by {2} -duty_cycle {50.000}
 

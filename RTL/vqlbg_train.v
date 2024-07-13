@@ -60,6 +60,7 @@ reg                 vqlbg_wr_en;
 reg [2:0]   cnt2/*synthesis PAP_MARK_DEBUG="1"*/;
 reg [2:0]   cnt3/*synthesis PAP_MARK_DEBUG="1"*/;
 reg [3:0]   cnt1/*synthesis PAP_MARK_DEBUG="1"*/;
+reg [3:0]   cnt4/*synthesis PAP_MARK_DEBUG="1"*/;
 reg   o_ready_mean_reg;
 reg   o_ready_mean_negedge;
 reg   o_valid_mean_reg;
@@ -204,6 +205,7 @@ always @(posedge clk or negedge rst_n) begin
                     state <= DISTEU_CFG;    //第一次计算到这里，至少还要再计算一次相对失真
                 end
                 else if ((sum_disteu_data + p2[39:7]) > sum_disteu_data_reg) begin
+                // else if (cnt4 == 'd7) begin
                     if (cnt2 == VQLBG_NUMBER - 1'b1) begin
                         state <= INIT;
                         train_down <= 1'b1;
@@ -248,6 +250,7 @@ always @(posedge clk or negedge rst_n) begin
         disteu_cfg_rd_addr <= 'd0;
         cfg_last_disteu <= 'd0;
         cfg_last_mean <= 'd0;
+        cnt4 <= 'd0;
     end
     else begin
         case (state)
@@ -273,6 +276,7 @@ always @(posedge clk or negedge rst_n) begin
                 disteu_cfg_rd_addr <= 'd0;
                 cfg_last_disteu <= 'd0;
                 cfg_last_mean <= 'd0;
+                cnt4 <= 'd0;
             end
             MFCC_MEAN_CFG: begin
                 if (o_ready_mean == 1'b1) begin
@@ -314,6 +318,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             VQLBG_DIVISION: begin                         //码本分裂，通用版
                 flag2 <= 'd0;
+                cnt4 <= 'd0;
                 if (cnt3 == 'd0) begin
                     vqlbg_wr_addr <= cruent_vqlbg_number_addr[cnt2] +  vqlbg_rd_addr1 - 'd3;  //分裂时，先写进分裂后半部分码本，
                     vqlbg_wr_data <= vqlbg_division2;
@@ -468,6 +473,7 @@ always @(posedge clk or negedge rst_n) begin
                 flag1 <= 'd0;
                 cnt1 <= 'd0;
                 flag2 <= 1'b1;
+                cnt4 <= cnt4 + 1'b1;
                 sum_disteu_data_reg <= sum_disteu_data;
                 sum_disteu_data <= 'd0;
                 vqlbg_rd_addr1 <= 'd0;

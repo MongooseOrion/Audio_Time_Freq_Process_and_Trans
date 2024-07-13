@@ -144,7 +144,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             RESULT_OUTPUT: begin
-                if (o_data_disteu_reg >= 'd20200) begin  //表示无结果
+                if (o_data_disteu_reg >= 'd22200) begin  //表示无结果
                     recognition_result <= {3{1'b1}};
                 end
                 else begin

@@ -1,5 +1,5 @@
-`timescale 1ns / 1ps
-`define UD #1
+//
+//
 module hdmi_spectrum # (
     parameter                            COCLOR_DEPP=8, // number of bits per channel
     parameter                            X_BITS=12,
@@ -48,8 +48,8 @@ reg [25:0]  p3;  //写进ram1的值
 reg [25:0]  p3_reg1;
 reg [25:0]  p3_reg2; // 
 wire [25:0] wr_data_ram2; //写进ram2的值
-wire [17:0] p;
-reg [17:0] p1;
+wire [19:0] p;
+reg [19:0] p1;
 
 reg        wr_en_ram1/*synthesis PAP_MARK_DEBUG="1"*/;
 reg        wr_en_ram1_reg;
@@ -121,7 +121,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 always @(posedge pix_clk) begin
-    p1 <= {17{1'b1}} - p;
+    p1 <= {18{1'b1}} - p;
     rs232_data_reg <= rs232_data;
 end
 
@@ -233,13 +233,13 @@ simple_length_512_width_26_ram spectrum_ram2 (
   .rd_rst(~rst_n )       // input
 );
 
-simple_multi_9x26 the_instance_name (
-  .a('d373),        // input [8:0]
+simple_multi_11x9 the_instance_name (
+  .a('d746),        // input [10:0]
   .b(spectrum_cnt),        // input [8:0]
   .clk(pix_clk),    // input
   .rst(~rst_n),    // input
   .ce(1'b1),      // input
-  .p(p)         // output [17:0]
+  .p(p)         // output [19:0]
 );
 
 endmodule

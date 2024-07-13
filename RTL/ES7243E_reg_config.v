@@ -1,15 +1,12 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////////
-//ES7243E中寄存器的配置程序
+//
+// ES7243E中寄存器的配置程序
  module ES7243E_reg_config(     
 	input       clk_12M         ,
 	input       rstn            ,
 	output      reg_conf_done   ,
 	output      i2c_sclk        ,
 	inout       i2c_sdat        ,
-    output      clock_i2c        
+    output reg  clock_i2c        
 );
 
      reg [15:0]clock_cnt;
@@ -18,7 +15,6 @@
      reg [15:0]reg_data;
      reg start/*synthesis PAP_MARK_DEBUG="1"*/;
 	 reg reg_conf_done_reg;
-     reg clock_i2c/*synthesis PAP_MARK_DEBUG="1"*/;
      reg [8:0]reg_index/*synthesis PAP_MARK_DEBUG="1"*/;
 	  
      i2c_com u_i2c_com(

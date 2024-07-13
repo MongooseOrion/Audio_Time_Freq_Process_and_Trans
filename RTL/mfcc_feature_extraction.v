@@ -40,7 +40,7 @@ function integer clog2;
             n = n >> 1;
     end
 endfunction
-parameter signed threshold_hign = 41000;
+parameter signed threshold_hign = 18000;
 parameter signed threshold_hign1 = 'd0;
 localparam  FFT_WIDTH      = clog2(FFT_LENGTH);    //10
 wire signed [DATA_WIDTH + FFT_WIDTH:0]         xk_axi4s_data_tdata_imag/*synthesis PAP_MARK_DEBUG="1"*/;
@@ -182,7 +182,7 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (state)
             START : begin
-                if (rs232_data[7:4] == 4'b0101 && rs232_flag == 1'b1) begin   //命令来了收集300帧有效mfcc
+                if (rs232_data[7:4] == 4'b0101 && rs232_flag == 1'b1) begin   //命令来了收集200帧有效mfcc
                     state <= INIT;
                     
                 end
@@ -199,6 +199,9 @@ always @(posedge clk or negedge rst_n) begin
                 else if (voice_flag_reg == 1'b1 ) begin
                     state <= WAIT_DATA;
                 end
+                // else begin
+                //     state <= WAIT_DATA;
+                // end
             end
             FIFO_INIT : begin
                 if (voice_flag_reg == 1'b1 ) begin

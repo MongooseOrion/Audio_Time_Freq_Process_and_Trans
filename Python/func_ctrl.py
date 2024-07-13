@@ -75,7 +75,7 @@ def audio_play(RATE = 48000):
     # 设置音频参数
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
-    CHUNK = 1024  # 每次读取的音频数据大小
+    CHUNK = 1024  # 每次读取的音频数据mo
 
     # 设置 UDP 参数
     UDP_IP = "192.168.0.3"
@@ -312,3 +312,10 @@ def emotion_gender_classify_predict(model_path, model_config, class_file):
         # 删除临时文件
         if os.path.exists('received_audio.wav'):
             os.remove('received_audio.wav')
+
+if __name__ == '__main__':
+    # command_send()
+    audio_play()
+    # audio_decode()
+    # classify_recog_predict()
+    # emotion
