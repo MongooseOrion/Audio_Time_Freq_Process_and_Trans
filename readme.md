@@ -2,6 +2,8 @@
 
 ±¾ÏîÄ¿ÓÃÓÚÊÇÒ»¸ö¿ÉÊµÏÖÒôÆµÈ¥Ôë¡¢ÊµÊ±ÈËÉùµ÷Õû¡¢»ØÉùÏû³ý¡¢¶àÖØÉùÒô·ÖÀëºÍÉùÎÆÊ¶±ð¹¦ÄÜ£¬²¢×ÛºÏÀûÓÃÁËÏÔÊ¾ÆÁ¡¢Íø¿ÚºÍ´®¿ÚµÈ½Ó¿ÚµÄ FPGA ÒôÆµÊý¾Ý´¦ÀíÊäÈëÊä³öÏµÍ³£¬²ÉÓÃÊµÊ±Á÷´¦Àí¡£
 
+  * ¿ª·¢Æ½Ì¨£º×Ï¹âÍ¬´´ PGL50H
+
 ## ²Ö¿â½á¹¹
 
 ```
@@ -10,6 +12,7 @@
 |-- FPGA                    // ±ÈÌØÁ÷ÎÄ¼þ¡¢Ô¼ÊøÎÄ¼þºÍ ROM ³õÊ¼»¯ÎÄ¼þ
 |-- model                   // Éî¶ÈÑ§Ï°Ä£ÐÍÎÄ¼þ
 |-- Python                  // python ´úÂë
+  |-- gui_ctrl.py           // ÉÏÎ»»ú²àµÄ¿ØÖÆ³ÌÐò
 |-- RTL                     // RTL ´úÂë
 |-- Sample                  // ²âÊÔÒôÆµ
 |-- Software                // Matlab ·ÂÕæ´úÂëºÍÏà¹ØÏµÍ³¿ØÖÆ³ÌÐò
@@ -18,7 +21,7 @@
 ## ÏµÍ³²ÎÊý¹æ¸ñºÍ¹¦ÄÜÖ¸±ê
 
 | ÏîÄ¿ | ²ÎÊý |
-| :--: | :---: |
+| :-- | :---: |
 | ÊäÈë²ÉÑùÆµÂÊ | 48kHz |
 | Êä³ö²ÉÑùÆµÂÊ | 48kHz |
 | ÊäÈë²ÉÑùÎ»Éî£¨Á¿»¯Î»¿í£© | 16bit |
@@ -29,16 +32,34 @@
 
 ÊÜÖ§³ÖµÄ¹¦ÄÜ£º
 
-  * ÈËÉùÊµÊ±µ÷Õû£»
+  * ÈËÉùÒôµ÷ÊµÊ±µ÷Õû£»
   * ÒÖÖÆÒôÆµ»ØÒôÐ§¹û£»
   * ÒôÆµÖÐ±³¾°ÉùÒÖÖÆ£»
   * ·ÖÀë±³¾°ÉùºÍÈËÉù£»
+  * ÈËÉùÉùÎÆÊ¶±ð£»
   * ÒôÆµµÄÁ÷Ê½´«Êä£¨UDP£©£»
   * ´®¿Ú¹¦ÄÜ¿ØÖÆ£»
-  * ÒôÆµ·ÖÀà¡¢ÉùÎÆÊ¶±ð¡¢ÈËÉùÇéÐ÷ºÍÐÔ±ðÊ¶±ð£¨µ÷ÓÃ[Éî¶ÈÑ§Ï°Ä£ÐÍ](#Éî¶ÈÑ§Ï°Ä£ÐÍ)£©
+  * ÈËÉù·ÖÀà£»
+  * ÒôÆµ·ÖÀà¡¢ÈËÉùÇéÐ÷ºÍÐÔ±ðÊ¶±ð£¨µ÷ÓÃ[Éî¶ÈÑ§Ï°Ä£ÐÍ](#Éî¶ÈÑ§Ï°Ä£ÐÍ)£©
 
-## FPGA ×ÊÔ´ÀûÓÃ
+## FPGA ×ÊÔ´ÀûÓÃÇé¿ö
 
+| Âß¼­×ÊÔ´Àà±ð | Ê¹ÓÃÁ¿ | Ê¹ÓÃ°Ù·Ö±È |
+| :--- | :---: | :---: |
+| FF£¨Flip-Flops£© | 11520 | 18 |
+| LUT | 18111 | 42 | 
+| LUT-FF pairs | 5285 | 12 |
+| BRAM | 102 | 77 |
+| ·Ö²¼Ê½ RAM | 239 | 2 |
+| DLL£¨Delay Locked Loop£©| 0 | 0 |
+| PLL£¨Phase Locked Loop£©| 4 | 80 |
+| ËãÊõÔËËãµ¥Ôª£¨APM£©| 36 | 43 |
+| Ê±ÖÓ»º³åÆ÷£¨RCKB£© | 0 | 0 |
+| I/O Blocks Data | 18 | 29 |
+| I/O Blocks Register | 4 | 27 |
+| I/O Blocks Special | 115 | 53 |
+| I/O Logic | 137 | 35 |
+| µÍÑ¹²îÎÈÑ¹Æ÷£¨LDO£© | 0 | 0 |
 
 ## ÏµÍ³¼Ü¹¹
 
@@ -50,25 +71,39 @@
 
 <div align='center'><img src='./Document\pic\»æÍ¼3.png' width='600px' title='ÏµÍ³ÍØÆËÍ¼'></div>
 
-## Ä£¿é¼Ü¹¹
+## Ä£¿éÃèÊö
 
-Äã¿ÉÒÔ[µã´Ë](./Document/voice_adjusted_theory.md)ÁË½âÃ¿¸öÄ£¿é´¦ÀíµÄÊµÏÖÔ­Àí¡£
+Äã¿ÉÒÔ[µã´Ë](./Document/algorithm_specific.md)ÁË½âÃ¿¸öÄ£¿é´¦ÀíµÄÊµÏÖÔ­Àí¡£
 
 ### »ØÉùÏû³ýÄ£¿é
+
+¸ÃÄ£¿éÓÃÓÚÒÖÖÆÒôÆµÖÖµÄÉùÑ§»ØÉù£¬¿ÉÍ¨¹ý´®¿Ú¿ØÖÆÏà¹Ø´¦Àí²ÎÊý£¬ÊµÏÖ¶ÔÈÎÒâÒôÆµµÄ»ØÉùÒÖÖÆ¡£
 
 <div align='center'><img src='./Document\pic\»æÍ¼4.png' width='450px' title='»ØÉùÏû³ýÄ£¿é½á¹¹Í¼'></div>
 
 ### ÈËÉù±äÉùÄ£¿é
 
+¸ÃÄ£¿éÓÃÓÚµ÷ÕûÈËÉùÉùµ÷£¬¹²ÓÐ 2 ÖÖÅäÖÃ£¬¿Éµ÷µÃ¸ü¸ß»òÕß¸üµÍ¡£
+
 <div align='center'><img src='./Document\pic\»æÍ¼5.png' width='430px' title='ÈËÉù±äÉùÄ£¿é½á¹¹Í¼'></div>
 
 ### ±³¾°ÔëÉùÏû³ýºÍ¶àÖØÉùÒô·ÖÀëÄ£¿é
 
-ÏµÍ³½«¸ø¶¨ÒôÆµÔÚÊ±ÓòÉÏ·Ö³É¶à¸ö´¦Àí¶Î£¬ÔÚ¸ø¶¨ÒôÆµÊý¾ÝÊäÈëÄ£¿éÊ±£¬ÔÚÃ¿¶ÎÒôÆµ´¦Àí¶Î·Ö±ðÓ¦ÓÃ¶ÔÓ¦µÄÆµÂÊÒÖÖÆºÍÌáÈ¡ÅäÖÃ£¬´Ó¶øÔÚÕû¸öÒôÆµÉÏ¶¼ÓÐ½ÏÎª¾«È·µÄÈ¥ÔëºÍÉùÒôÌáÈ¡Ð§¹û¡£
-
-ÔÚÉè¼ÆÊ±£¬È¥Ôë¹¦ÄÜÓëÉùÒô·ÖÀë¹¦ÄÜÖ»Ðè¹Ì»¯²»Í¬ ROM µÄÅäÖÃÎÄ¼þ£¬Àý»¯³ÉÁ½¸öÄ£¿é¼´¿É¡£È¥ÔëÄ£¿é·ÖÎª 46 ¸ö´¦Àí¶Î£¬¶àÖØÉùÒô·ÖÀëÄ£¿é·ÖÎª 45 ¸ö´¦Àí¶Î£¬Ã¿¶ÎÂú×ã 21 ¸ö 1024 FFT ´¦ÀíÖ¡¡£
+ÏµÍ³½«**¸ø¶¨ÒôÆµ**ÔÚÊ±ÓòÉÏ·Ö³É¶à¸ö´¦Àí¶Î£¬ÔÚ¸ø¶¨ÒôÆµÊý¾ÝÊäÈëÄ£¿éÊ±£¬ÔÚÃ¿¶ÎÒôÆµ´¦Àí¶Î·Ö±ðÓ¦ÓÃ¶ÔÓ¦µÄÆµÂÊÒÖÖÆºÍÌáÈ¡ÅäÖÃ£¬´Ó¶øÔÚÕû¸öÒôÆµÉÏ¶¼ÓÐ½ÏÎª¾«È·µÄÈ¥ÔëºÍÉùÒôÌáÈ¡Ð§¹û¡£
 
 <div align='center'><img src='./Document\pic\»æÍ¼8.png' width='550px' title='ÈËÉù±äÉùÄ£¿é½á¹¹Í¼'></div>
+
+ÏµÍ³»¹¼ÓÈëÁËÒ»¸ö**×ÔÊÊÓ¦È¥³ýÎÈÌ¬ÔëÉù**µÄ¹¦ÄÜ£¬µ±ÊäÈëµÄÒôÆµµÄÆµÂÊ·¶Î§ºã¶¨Ê±£¬¿ÉÒÔÒÖÖÆ¡£
+
+### ÉùÎÆÊ¶±ðÄ£¿é
+
+¸ÃÄ£¿éÓÃÓÚÊ¶±ð¸ø¶¨ÒôÆµµÄÈËÉùÊôÓÚÄÄÒ»¸öÑµÁ·ÒôÆµ¡£ÏµÍ³²ÉÓÃÃ·¶ûµ¹Æ×ÏµÊý£¨Mel-scale Frequency Cepstral Coefficients£¬MFCC£©×÷ÎªÓÃÓÚ VQ ¼ÆËãµÄÌØÕ÷²ÎÊý£»²ÉÓÃ VQ-LBG Ëã·¨×÷ÎªÑµÁ·ºÍÊ¶±ðµÄËã·¨¡£**¿ÉÊµÏÖ¼´Ê±ÑµÁ·ºÍ¼´Ê±Ê¶±ð**¡£
+
+<div align='center'><img src='./Document\pic\»æÍ¼12.png' width='600px' title='ÉùÎÆÊ¶±ðÄ£¿é½á¹¹Í¼'></div>
+
+### Â¼ÒôÄ£¿é
+
+Ê¹ÓÃ DDR »º´æÈÎÒâÊ±³¤ºÍÈÎÒâ·Ö¶ÎÒôÆµÊý¾Ý£¨Èç¹ûÄÚ´æ×ã¹»£©£¬¿ÉÒÔÍ¨¹ý UART Ö¸¶¨Òª»Ø·ÅµÄÒôÆµË÷Òý¡£
 
 ### UART Ä£¿é
 
@@ -78,6 +113,34 @@ UART Ä£¿éÓÃÓÚ½ÓÊÕÓÉ¼ÆËã»ú·¢ËÍµÄ¿ØÖÆÃüÁî£¬ÒÔÖ¸Ê¾µ±Ç°ÆôÓÃµÄ¹¦ÄÜ£¬Í¬Ê±ÓÃÓÚ½«ÉùÎÆÊ¶±
 
 ÒÔÌ«ÍøÊý¾Ý·¢ËÍÄ£¿éÓÃÓÚ½«ÒôÆµÊý¾Ý·¢ËÍµ½¼ÆËã»ú£¬ÒÔ±ãÖ´ÐÐÉî¶ÈÑ§Ï°ÍÆÀíÈÎÎñ¡£Îª±ÜÃâ´«Êä³ö´íºÍ¼ÆËã»ú python ³ÌÐò´íÎó±àÂë£¬ÏµÍ³Ê¹ÓÃ¶ÎÍ¬²½ÐÅºÅ `voice_vsync` ºÍÖ¡ÓÐÐ§ÐÅºÅ `voice_href` À´Ö¸Ê¾ÒÔÌ«ÍøÄ£¿é·¢ËÍÊý¾Ý£¬Ã¿¶ÎÊý¾ÝÓÐ 128 Ö¡£¬Ã¿Ö¡µÄ¿í¶ÈÎª 512 ¸öÊ±ÖÓÖÜÆÚ£¨¼´ 512 ¸öÒôÆµÊý¾Ý£©£»ÔÚÃ¿¶ÎÊý¾ÝµÄ¿ªÍ·ºÍ½áÎ²£¬ÏµÍ³¼ÓÈëÁËÆðÊ¼±êÊ¶·û£º`FF B3`£¬ÖÕÖ¹±êÊ¶·û£º`FF B4`¡£
 
-## Éî¶ÈÑ§Ï°Ä£ÐÍ
+### ÈËÉù·ÖÀàÄ£¿é
 
-ÏµÍ³Í¨¹ý×÷Õß´æ´¢¿âÖÐµÄ[ÒôÆµ·ÖÀà]()ÏîÄ¿ÊµÏÖÁËÒôÆµ·ÖÀà¡¢ÉùÎÆÊ¶±ð¡¢ÈËÉùÇéÐ÷ºÍÐÔ±ðÊ¶±ð¹¦ÄÜ¡£Îª±¾ÏîÄ¿Ô¤¹¹½¨µÄÄ£ÐÍÎÄ¼þÎ»ÓÚ `./model` ÎÄ¼þ¼ÐÄÚ¡£Äã¿ÉÒÔ·ÃÎÊ¸Ã²Ö¿â×ÔÐÐÑµÁ·Ä£ÐÍ¡£
+ÈËÉù·ÖÀàÓëÉùÎÆÊ¶±ðµÄ²»Í¬µãÔÚÓÚ£ºÉùÎÆÊ¶±ðÐèÒªÏÈÑéµÄÌØÕ÷ÏòÁ¿£¨Í¨¹ýÑµÁ·µÃµ½£©£¬È»ºó½«ÊäÈëµÄÌØÕ÷ÏòÁ¿ÓëÆäÏà±È½ÏÅ·¼¸ÀïµÃ¼¸ºÎ¾àÀë£¬´Ó¶øÈ·ÈÏ¸ÃÉùÒôÊÇ·ñÊôÓÚÏÈÑéÌØÕ÷ÏòÁ¿Ëù¶ÔÓ¦µÄÈËÉù£»¶øÈËÉù·ÖÀàÔò²»»á½øÐÐÑµÁ·£¬Ö±½Ó¶ÔÊäÈëµÄÒôÆµ½øÐÐ·ÖÀà¡£
+
+¸Ã¹¦ÄÜÒ²²ÉÓÃ VQ-LBG Ëã·¨ÊµÏÖ£¬Ëã·¨Ô­Àí[ÉùÎÆÊ¶±ð](#ÉùÎÆÊ¶±ðÄ£¿é)µÄÔ­ÀíÏàÍ¬¡£È»¶ø£¬ÔÚ FPGA ÊµÏÖÊ±ÉáÈ¥ÁËÒ»Ð©¾«¶È£¬´Ó¶øÎÞ·¨Âú×ãÎÞÏÈÑéÉùÎÆÀà±ðµÄÇ°ÌáÏÂ½«²»Í¬ÈËÉù×Ô¶¯»¯·ÖÀàµÄÐèÒª£¬Òò´Ë¸ÃÈÎÎñ¸üÊÊÓÃÓÚ¼ÆËã»ú´¦Àí¡£ÓÉÓÚ¼ÆËã»ú¿É´¦ÀíµÄÊý¾Ý¾«¶È¸ü¸ß£¬ÀýÈç `numpy.float64`£¬Òò´Ë¿ÉÓÃÓÚÊµÏÖÈËÉù·ÖÀà¡£
+
+### Éî¶ÈÑ§Ï°Ä£ÐÍ
+
+ÏµÍ³Í¨¹ý×÷Õß´æ´¢¿âÖÐµÄ[ÒôÆµ·ÖÀà](https://github.com/MongooseOrion/Audio-Classification)ÏîÄ¿ÊµÏÖÁËÒôÆµ·ÖÀà¡¢±äÉù¼ì²â¡¢ÈËÉùÇéÐ÷ºÍÐÔ±ðÊ¶±ð¹¦ÄÜ¡£Îª±¾ÏîÄ¿Ô¤¹¹½¨µÄÄ£ÐÍÎÄ¼þÎ»ÓÚ `./model` ÎÄ¼þ¼ÐÄÚ¡£Äã¿ÉÒÔ·ÃÎÊ¸Ã²Ö¿â×ÔÐÐÑµÁ·Ä£ÐÍ¡£
+
+## ÏµÍ³ÐÔÄÜ
+
+### ÑÓ³Ù
+
+| ¼ü | Ä£¿éÖ÷Ê±ÖÓ | Öµ |
+| :--- | :---: | :--- |
+| »ØÉùÏû³ýÄ£¿é´¦ÀíÑÓ³Ù | 48kHz | Ô¼ 8000 ¸öÊ±ÖÓÖÜÆÚ |
+| ÈËÉùµ÷ÕûÄ£¿é´¦ÀíÑÓ³Ù | 48kHz | 1024 ¸öÊ±ÖÓÖÜÆÚ |
+| ±³¾°ÔëÉùÏû³ýÄ£¿é´¦ÀíÑÓ³Ù | 48kHz | 512 ¸öÊ±ÖÓÖÜÆÚ | 
+| ¶àÖØÉùÒô·ÖÀëÄ£¿é´¦ÀíÑÓ³Ù | 48kHz | 512 ¸öÊ±ÖÓÖÜÆÚ | 
+| ÉùÎÆÊ¶±ðÄ£¿é´¦ÀíÑÓ³Ù | 100MHz | ÌØÕ÷ÌáÈ¡£ºÔ¼ 30ms <br>ÑµÁ·£ºÔ¼ 10ms <br>Ê¶±ð£ºÔ¼ 2ms |
+| ÒÔÌ«ÍøÊý¾Ý·¢ËÍÄ£¿é´¦ÀíÑÓ³Ù | 1.536MHz | Ô¼ 1537 ¸öÊ±ÖÓÖÜÆÚ |
+
+### ×¼È·¶È
+
+| ¼ü | Öµ |
+| :--- | :--- |
+| ÉùÎÆÊ¶±ð | 98% |
+| ÈËÉù·ÖÀà | 92% |
+
+²âÊÔ·½·¨£ºÔÚÊý¾Ý¼¯ÖÐËæ»ú³éÈ¡ 20 ¶Î 4 ¸öÈËµÄÉùÒô£¬Ê¶±ðÕýÈ·µÄÊýÁ¿Óë 20 µÄ±ÈÖµ£»½øÐÐ 5 ´Î²âÁ¿È¡¾ùÖµ¡£

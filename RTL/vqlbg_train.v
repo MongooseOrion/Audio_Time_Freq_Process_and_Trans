@@ -1,7 +1,6 @@
 module vqlbg_train 
 #(
-    parameter MFCC_FRAME_NUMBER = 'd200, //这个是总共的mfcc特征帧数量
-    parameter VQLBG_NUMBER = 'd3,  //2的三次方，8个码本,目前只支持8个码本最多，因为码本存储空间ram的限制，如要更大，需修改vqlbg_addr_bias
+    parameter VQLBG_NUMBER = 'd4,  //2的三次方，8个码本,目前只支持8个码本最多，因为码本存储空间ram的限制，如要更大，需修改vqlbg_addr_bias
     parameter MFCC_NUMBER = 'd31   //这个是一帧mfcc有多少个数值
     
 )
@@ -10,11 +9,12 @@ module vqlbg_train
     input              rst_n,
     input [7:0]        rs232_rx_data,
     input              mfcc_extraction_end,
-    output reg[12:0]   mfcc_addr,
+    output reg[13:0]   mfcc_addr,
     input  [8:0]       mfcc_data,
     input  [10:0]      vqlbg_addr,
     output [8:0]       vqlbg_rd_data,
-    output  reg        train_down/*synthesis PAP_MARK_DEBUG="1"*/
+    output  reg        train_down/*synthesis PAP_MARK_DEBUG="1"*/,
+    input   [8:0]      mfcc_number
 );
 
 parameter     division_contant = 7'd3;  // 相当于 3/128,分裂偏差
@@ -75,7 +75,7 @@ reg     o_valid_disteu_negedge_reg;
 
 
 wire [3:0]  disteu_mode1_rd_data;
-
+reg [8:0]     MFCC_FRAME_NUMBER;
 
 reg [8:0] disteu_mode1_wr_addr;
 wire       disteu_mode1_wr_en;
@@ -89,7 +89,7 @@ wire       disteu_cfg_wr_en;
 reg [8:0] disteu_cfg_rd_addr;
 
 reg [9:0]    state/*synthesis PAP_MARK_DEBUG="1"*/;
-reg [7:0]     cruent_vqlbg_number_addr [0:3];
+reg [7:0]     cruent_vqlbg_number_addr [0:3];   //码本分裂的时候所用的起始地址
 initial begin
     cruent_vqlbg_number_addr[0] = MFCC_NUMBER * 1;
     cruent_vqlbg_number_addr[1] = MFCC_NUMBER * 2;
@@ -105,12 +105,12 @@ initial begin
     cruent_vqlbg_number[3] = 4'd15;
 end
 
-reg [9:0]   vqlbg_addr_bias [0:3];
+reg [10:0] vqlbg_addr_bias [0:3];
 initial begin
-    vqlbg_addr_bias[0] = 10'd0;
-    vqlbg_addr_bias[1] = 10'd320;
-    vqlbg_addr_bias[2] = 10'd640;
-    vqlbg_addr_bias[3] = 10'd960;
+    vqlbg_addr_bias[0] = MFCC_NUMBER * (0 << 4);
+    vqlbg_addr_bias[1] = MFCC_NUMBER * (1 << 4);
+    vqlbg_addr_bias[2] = MFCC_NUMBER * (2 << 4);
+    vqlbg_addr_bias[3] = MFCC_NUMBER * (3 << 4);
 end
 parameter  INIT             = 10'b0000000001;   //初始化
 parameter  MFCC_MEAN_CFG    = 10'b0000000010;   //mean模块配置
@@ -128,6 +128,17 @@ assign disteu_cfg_wr_en = (disteu_mode1_rd_addr >= 'd1 && disteu_mode1_rd_addr <
 assign disteu_cfg_wr_data = disteu_mode1_rd_addr - 1'b1;
 assign disteu_mode1_wr_en = (cfg_mode_data_disteu[5:4] == 2'b01) ? o_valid_disteu : 1'b0;
 assign p_1 = p[15:7];
+
+//保存mfcc的帧数
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        MFCC_FRAME_NUMBER <= 'd0;
+    end
+    else if (rs232_rx_data[7:3] == 5'b01010 && mfcc_extraction_end == 1'b1) begin
+        MFCC_FRAME_NUMBER <= mfcc_number - 1'b1;  
+    end
+end
+
 //跳转逻辑
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
@@ -526,37 +537,37 @@ end
 
 always @(*) begin
     if (~rst_n) begin
-        vqlbg_rd_addr <= 'd0;
+        vqlbg_rd_addr = 'd0;
     end
     else if (rs232_rx_data[7:3] == 5'b01011) begin
-        vqlbg_rd_addr <= vqlbg_addr ;   //这个是recongnition_test 输入的，那边已经有偏移地址，不用加
+        vqlbg_rd_addr = vqlbg_addr ;   //这个是recongnition_test 输入的，那边已经有偏移地址，不用加
     end
     else if (state == VQLBG_DIVISION) begin
-        vqlbg_rd_addr <= vqlbg_rd_addr1 + vqlbg_addr_bias[rs232_rx_data[1:0]];
+        vqlbg_rd_addr = vqlbg_rd_addr1 + vqlbg_addr_bias[rs232_rx_data[1:0]];
     end
     else begin
-        vqlbg_rd_addr <= disteu_rd_addr + vqlbg_addr_bias[rs232_rx_data[1:0]];
+        vqlbg_rd_addr = disteu_rd_addr + vqlbg_addr_bias[rs232_rx_data[1:0]];
     end
 end
 
 always @(*) begin
     if (~rst_n) begin
-        vqlbg_wr_addr1 <= 'd0;
+        vqlbg_wr_addr1 = 'd0;
     end
     else if (rs232_rx_data[7:3] == 5'b01010) begin
-        vqlbg_wr_addr1 <= vqlbg_wr_addr +  vqlbg_addr_bias[rs232_rx_data[1:0]];  
+        vqlbg_wr_addr1 = vqlbg_wr_addr +  vqlbg_addr_bias[rs232_rx_data[1:0]];  
     end
 end
 
 always @(*) begin
     if (~rst_n) begin
-        mfcc_addr <= 'd0;
+        mfcc_addr = 'd0;
     end
     else if (state == DISTEU_COMPUTE || state == DISTEU_CFG) begin
-        mfcc_addr <= disteu_mfcc_addr;
+        mfcc_addr = disteu_mfcc_addr;
     end
     else begin
-        mfcc_addr <= mean_mfcc_addr;
+        mfcc_addr = mean_mfcc_addr;
     end
 end
 

@@ -112,7 +112,9 @@ wire                    rx_r_vld                    ;
 wire [15:0]             ldata_out                   ;
 wire [15:0]             rdata_out                   ;
 wire [15:0]             voice_change_out            ;
-wire [15:0]             ldata                       ;
+wire [15:0]             ldata_1                     ;
+reg  [15:0]             ldata                       ;
+reg  [15:0]             ldata_reg                   ;
 wire [15:0]             rdata                       ;
 
 wire [2:0]              recognition_result          ;
@@ -172,6 +174,7 @@ wire                        rd_en               ;
 
 reg  [3:0]              split_mode                  ;
 reg  [15:0]             voice_out                   ;
+reg  [15:0]             voice_out1                  ;
 reg                     CHANGE_MODE                 ; 
 
 reg  [3:0]              reset_delay_cnt;
@@ -183,16 +186,20 @@ reg                     ce              ;
 reg                     rst_1           ;
 reg  [19:0]             rstn_1ms        ;
 reg                     hardware_led    ;
+reg [7:0]               rs232_rx_data_sync; // 串口数据同步到dlrc时钟下
+reg [7:0]               rs232_rx_data_sync1;
 
-
+reg [7:0]               rs232_rx_data_sync_sclk ; //串口数据同步到sclk时钟下
+reg [7:0]               rs232_rx_data_sync1_sclk;
+wire [15:0]     voiceprint_vioce_out;
 assign r_out = o_data[23:16];
 assign g_out = o_data[15:8];
 assign b_out = o_data[7:0];
-assign xn_axi4s_data_tvalid = (rs232_rx_data[7:4] == 4'b0101)? xn_axi4s_data_tvalid2:xn_axi4s_data_tvalid1;
-assign xn_axi4s_data_tdata  = (rs232_rx_data[7:4] == 4'b0101)? xn_axi4s_data_tdata2 :xn_axi4s_data_tdata1 ;
-assign xn_axi4s_data_tlast  = (rs232_rx_data[7:4] == 4'b0101)? xn_axi4s_data_tlast2 :xn_axi4s_data_tlast1 ;
-assign xn_axi4s_cfg_tvalid  = (rs232_rx_data[7:4] == 4'b0101)? xn_axi4s_cfg_tvalid2 :xn_axi4s_cfg_tvalid1 ;
-assign xn_axi4s_cfg_tdata   = (rs232_rx_data[7:4] == 4'b0101)? xn_axi4s_cfg_tdata2  :xn_axi4s_cfg_tdata1  ;
+assign xn_axi4s_data_tvalid = (rs232_rx_data[7:4] == 4'b0101 && rd_start == 1'b1)? xn_axi4s_data_tvalid2:xn_axi4s_data_tvalid1;
+assign xn_axi4s_data_tdata  = (rs232_rx_data[7:4] == 4'b0101 && rd_start == 1'b1)? xn_axi4s_data_tdata2 :xn_axi4s_data_tdata1 ;
+assign xn_axi4s_data_tlast  = (rs232_rx_data[7:4] == 4'b0101 && rd_start == 1'b1)? xn_axi4s_data_tlast2 :xn_axi4s_data_tlast1 ;
+assign xn_axi4s_cfg_tvalid  = (rs232_rx_data[7:4] == 4'b0101 && rd_start == 1'b1)? xn_axi4s_cfg_tvalid2 :xn_axi4s_cfg_tvalid1 ;
+assign xn_axi4s_cfg_tdata   = (rs232_rx_data[7:4] == 4'b0101 && rd_start == 1'b1)? xn_axi4s_cfg_tdata2  :xn_axi4s_cfg_tdata1  ;
 
 assign lin_led = left_in_detect ? 1'b0 : 1'b1;
 assign lout_led = left_out_detect ? 1'b0 : 1'b1;
@@ -238,14 +245,18 @@ i2s_loop#(
 )i2s_loop(
     .rst_n          (adc_dac_init),// input
     .sck            (es0_dsclk  ),// input
-    .ldata          (ldata      ),// output[15:0]
+    .ldata          (ldata_1    ),// output[15:0]
     .rdata          (rdata      ),// output[15:0]
     .data           (rx_data    ),// input[15:0]   //
     .r_vld          (rx_r_vld   ),// input
     .l_vld          (rx_l_vld   ) // input
 );
 
-
+//同步ldata1到dlrc时钟下,减少时序违例
+always @(posedge es1_dlrc ) begin
+    ldata_reg <= ldata_1;
+    ldata <= ldata_reg;
+end
 //
 // 初始化复位信号
 always @(posedge clk_12M)begin
@@ -342,7 +353,7 @@ sync_vg sync_vg(
     .y_act                (  act_y                ) //output reg [Y_BITS:0]   y_out,             
 );
 
-
+wire [31:0]  wr_data4;
 //
 // 频谱显示
 hdmi_spectrum hdmi_spectrum (
@@ -424,7 +435,6 @@ rs232_tx #(
 always @(posedge core_clk) begin
     if (~adc_dac_init) begin
         split_mode <= 'd1;
-        voice_out <= ldata;
         rst_1 <= 'd0;
     end
     else if ( rs232_rx_flag == 1'b1) begin
@@ -432,38 +442,60 @@ always @(posedge core_clk) begin
     end
     else if (rs232_rx_data[7:4] == 4'b0011 ) begin  // 降噪
         split_mode <= rs232_rx_data[3:0] + 'd6;
-        voice_out <= noise_reduction_data_out;
         rst_1 <= 'd0;
     end
     else if (rs232_rx_data[7:4] == 4'b0100 ) begin  // 人声分离
         split_mode <= rs232_rx_data[3:0];
-        voice_out <= noise_reduction_data_out;
         rst_1 <= 'd0;
     end
     else if (rs232_rx_data[7:4] == 4'b0001 ) begin // 回声消除
-        voice_out <= ldata_out;
         rst_1 <= 1'b0;
     end
     else if (rs232_rx_data[7:4] == 4'b0010 ) begin  // 变声选择
-        voice_out <= voice_change_out;
         CHANGE_MODE <= rs232_rx_data[0];
         rst_1 <= 1'b0;
     end
     else if (rs232_rx_data[7:4] == 4'b0101 ) begin  // 声纹识别
-        voice_out <= ldata;
         rst_1 <= 1'b0;
     end
     else if (rs232_rx_data[7:3] == 5'b10101 ) begin  // ddr 录音播放
-        voice_out <= record_vioce_out;
         rst_1 <= 1'b0;
     end
     else begin
-        voice_out <= ldata;
         rst_1 <= 1'b0;
     end
 end
 
+//同步voice_out到dlrc时钟下,减少时序违例
+always @(posedge es1_dsclk) begin
+    rs232_rx_data_sync_sclk <= rs232_rx_data;
+    rs232_rx_data_sync1_sclk <= rs232_rx_data_sync;
+    voice_out <= voice_out1;
+end
 
+always @(posedge es1_dsclk) begin
+    if (rs232_rx_data_sync1_sclk[7:4] == 4'b0011) begin
+        voice_out1 <= noise_reduction_data_out;
+    end
+    else if (rs232_rx_data_sync1_sclk[7:4] == 4'b0100) begin
+        voice_out1 <= noise_reduction_data_out;
+    end
+    else if (rs232_rx_data_sync1_sclk[7:4] == 4'b0001) begin
+        voice_out1 <= ldata_out;
+    end
+    else if (rs232_rx_data_sync1_sclk[7:4] == 4'b0010) begin
+        voice_out1 <= voice_change_out;
+    end
+    else if (rs232_rx_data_sync1_sclk[7:4] == 4'b0101&& rd_start == 1'b0) begin
+        voice_out1 <= ldata;
+    end
+    else if (rs232_rx_data_sync1_sclk[7:3] == 5'b10101 ) begin
+        voice_out1 <= record_vioce_out;
+    end
+    else begin
+        voice_out1 <= ldata;
+    end
+end
 //
 // 人声分离和降噪
 noise_reduction#(
@@ -474,6 +506,8 @@ noise_reduction#(
     .clk            (core_clk),
     .data_in        (ldata      ),// input[15:0]
     .data_out(noise_reduction_data_out),
+    .rs232_data(rs232_rx_data),
+    .rs232_flag(rs232_rx_flag),
     .xn_axi4s_data_tready(xn_axi4s_data_tready),
     .xn_axi4s_data_tvalid(xn_axi4s_data_tvalid1),
     .xn_axi4s_data_tdata(xn_axi4s_data_tdata1),
@@ -489,7 +523,8 @@ noise_reduction#(
     .rst_rs232 (rst_1)
 );
 
-
+wire [CTRL_ADDR_WIDTH-1:0]    save_axi_awaddr;
+wire                          audio_data_valid;
 //
 // 声纹识别
 voiceprint_recognition#(
@@ -513,7 +548,13 @@ voiceprint_recognition#(
     .xk_axi4s_data_tlast(xk_axi4s_data_tlast),
     .recognition_result (recognition_result) ,
     .recognition_result_flag (recognition_result_flag) ,
-    .train_down(train_down)
+    .train_down(train_down),
+    .audio_data_valid(audio_data_valid) , // 语音数据有效开始写ddr信号
+    .voiceprint_vioce_out(voiceprint_vioce_out),
+    .almost_full1   (almost_full1),
+    .rd_en_fifo     (rd_en_fifo),
+    .rd_start       (rd_start)
+
 );
 
 
@@ -538,6 +579,15 @@ ipsxb_fft_demo_pp_1024  u_fft_wrapper (
 
 //
 // 回声消除
+// ehco_Cancelling#(
+//     .DATA_WIDTH(16)
+// )ehco_Cancelling_inst(
+//     .rst_n          (adc_dac_init),// input
+//     .sck            (es1_dlrc   ),// input
+//     .data_out       (ldata_out    ),// output[15:0]
+//     .data_in        (ldata      )// input[15:0]
+
+// );
 ehco_Cancelling#(
     .DATA_WIDTH(16)
 )ehco_Cancelling_inst(
@@ -550,7 +600,6 @@ ehco_Cancelling#(
     .data_in        (ldata      )// input[15:0]
 
 );
-
 
 // 
 // 人声变声
@@ -577,7 +626,7 @@ cache_wr_fifo cache_wr_fifo_inst (
   .wr_full(),              // output
   .almost_full(),      // output
   .rd_clk(core_clk),                // input
-  .rd_rst(~record_valid),                // input
+  .rd_rst(~(record_valid|mfcc_valid1)),                // input
   .rd_en(rd_en),                  // input
   .rd_data(rd_data),              // output [255:0]
   .rd_empty(),            // output
@@ -585,7 +634,9 @@ cache_wr_fifo cache_wr_fifo_inst (
 );
 
 
-//
+
+
+
 // axi 总线写
 axi_interconnect_wr axi_interconnect_wr_inst (
     .clk            (core_clk),                // ddr core clk
@@ -601,7 +652,11 @@ axi_interconnect_wr axi_interconnect_wr_inst (
     .axi_wdata      (axi_wdata) ,
     .axi_wlast      (axi_wusero_last) ,
     .axi_wready     (axi_wready),      
-    .record_valid   (record_valid)
+    .record_valid   (record_valid),
+    .audio_data_valid(audio_data_valid),
+    .axi_araddr     (axi_araddr),
+    .rd_start       (rd_start),
+    .mfcc_valid1    (mfcc_valid1)
 );
 
 
@@ -621,7 +676,14 @@ axi_interconnect_rd axi_interconnect_rd_inst (
     .axi_rlast      (axi_rlast)  ,
     .axi_awaddr     (axi_awaddr) ,
     .record_valid   (record_valid) ,
-    .record_vioce_out(record_vioce_out)
+    .record_vioce_out(record_vioce_out),
+    .rd_start       (rd_start),
+    .voiceprint_vioce_out(voiceprint_vioce_out),
+    .almost_full1   (almost_full1),
+    .rd_en_fifo     (rd_en_fifo),
+    .data_in        (ldata),
+    .mfcc_valid1    (mfcc_valid1),
+    .sck            (es1_dlrc)
 );
 
 
@@ -704,9 +766,16 @@ ddr3 ddr3_record_cache_inst (
 
 
 // 
-// 音频元数据 UDP 发送
+// 音频元数据 UDP 发送,以及同步时钟域
+always @(posedge es1_dlrc) begin
+    rs232_rx_data_sync <= rs232_rx_data;
+    rs232_rx_data_sync1 <= rs232_rx_data_sync;
+end
+
+
+
 always @(posedge es1_dlrc ) begin
-    if (rs232_rx_data[7:4] == 4'b0010) begin
+    if (rs232_rx_data_sync1[7:4] == 4'b0010) begin
         eth_voice_data <= voice_change_out;
     end
     else begin

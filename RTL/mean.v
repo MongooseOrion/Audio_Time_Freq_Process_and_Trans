@@ -1,7 +1,7 @@
 module mean 
 #(
     parameter DATA_WIDTH         = 'd9,
-    parameter ADDR_WIDTH         = 'd13,
+    parameter ADDR_WIDTH         = 'd14,
     parameter MEAN_RESULT_NUBMER = 'd31,
     parameter MEAN_FRAME_WIDTH   = 'd9 
 )
@@ -31,11 +31,15 @@ reg [7:0]                                state;
 wire [13:0]                               p;
 reg [7:0]                                addr_bias;
 reg [MEAN_FRAME_WIDTH - 1'b1 : 0]        mean_data;
-reg                                      wr_en_fifo;
 reg                                      rd_en_fifo;
 reg [MEAN_FRAME_WIDTH - 1'b1 : 0]       mean_data_end;
 reg [5:0]                                cnt1;
 reg [2:0]                                cnt5;
+
+wire done;
+wire [31:0]   q/*synthesis PAP_MARK_DEBUG="1"*/;
+reg start;
+
 parameter  INIT          = 8'b00000001;   //FIFO初始化
 parameter  CFG_RAM       = 8'b00000010;   //配置ram
 parameter  COMPUTE_INIT  = 8'b00000100;   //计算初始化
@@ -44,38 +48,7 @@ parameter  RESULT_SAVE   = 8'b00010000;   //结果存储
 parameter  RESULT_OUTPUT = 8'b00100000;   //最终输出
 parameter  TIME_DELAY    = 8'b01000000;   //延迟4个时钟周期，以便能正确的赋值到初值
 
-// assign sum_data1 = (sum_data[17] == 1'b1) ? (~(sum_data - 1'b1))  : sum_data;        
-// assign mean_data_end = (sum_data[17] == 1'b1) ? (~(mean_data) + 1'b1)  : mean_data;  //编译器不能直接计算负数的除法，故被除数换成正数，最后的结果在换成负数
 
-
-//编译器不能直接计算负数的除法，故被除数换成正数，最后的结果在换成负数
-always @(posedge clk or negedge rst_n) begin
-    if (~rst_n) begin
-        sum_data1 <= 'd0;
-    end
-    else if (sum_data[17] == 1'b1) begin
-        sum_data1 <= ~(sum_data - 1'b1);
-    end
-    else begin
-        sum_data1 <= sum_data;
-    end
-end
-
-always @(posedge clk or negedge rst_n) begin
-    if (~rst_n) begin
-        mean_data_end <= 'd0;
-    end
-    else if (sum_data[17] == 1'b1) begin
-        mean_data_end <= ~(mean_data) + 1'b1;
-    end
-    else begin
-        mean_data_end <= mean_data;
-    end
-end
-
-always @(posedge clk) begin
-    mean_data <= sum_data1/divide;
-end
 
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
@@ -93,11 +66,13 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
         state <= INIT;
+        start <= 1'b0;
     end
     else begin
         case (state)
             INIT:begin
                 state <= CFG_RAM;
+                start <= 1'b0;
             end 
             CFG_RAM:begin
                 if (cfg_last == 1'b1) begin
@@ -111,17 +86,20 @@ always @(posedge clk or negedge rst_n) begin
             end
             COMPUTE_INIT:begin
                 state <= COMPUTE;
+                start <= 1'b0;
             end
             COMPUTE:begin
                 if (rd_addr == (wr_addr + 'd6)) begin   //多两个时钟周期，确保已计算完
                     state <= RESULT_SAVE;
+                    start <= 1'b1;
                 end
             end
             RESULT_SAVE:begin
-                if (addr_bias == (MEAN_RESULT_NUBMER - 1'b1)) begin
+                start <= 1'b0;
+                if (addr_bias == (MEAN_RESULT_NUBMER - 1'b1) && done == 1'b1) begin
                     state <= RESULT_OUTPUT;
                 end
-                else begin
+                else if(done == 1'b1) begin
                     state <= COMPUTE_INIT;
                 end
                 
@@ -146,7 +124,6 @@ always @(posedge clk or negedge rst_n) begin
         addr    <= 'd0;
         sum_data<= 'd0;
         addr_bias<= 'd0;
-        wr_en_fifo <= 1'b0;
         cnt1 <= 'd0;
         rd_en_fifo <= 1'b0;
         // mean_data <= 'd0;
@@ -162,7 +139,7 @@ always @(posedge clk or negedge rst_n) begin
                 rd_addr <= 'd0;
                 sum_data<= 'd0;
                 addr_bias <= 'd0;
-                wr_en_fifo <= 1'b0;
+
                 cnt1 <= 'd0;
                 rd_en_fifo <= 1'b0;
                 // mean_data <= 'd0;
@@ -191,7 +168,7 @@ always @(posedge clk or negedge rst_n) begin
             COMPUTE_INIT:begin
                 rd_addr <= 'd0;
                 addr <= 'd0;
-                wr_en_fifo <= 1'b0;
+
                 sum_data <= 'd0;
             end
             COMPUTE:begin
@@ -203,11 +180,12 @@ always @(posedge clk or negedge rst_n) begin
                 // mean_data <= sum_data1/wr_addr;
             end
             RESULT_SAVE:begin
-                addr_bias <= addr_bias + 1'b1;
-                wr_en_fifo <= 1'b1;
+                if (done == 1'b1) begin
+                    addr_bias <= addr_bias + 1'b1;
+                end
             end
             RESULT_OUTPUT:begin
-                wr_en_fifo <= 1'b0;
+
                 if (cnt1 == MEAN_RESULT_NUBMER ) begin
                     rd_en_fifo <= 1'b0;
                 end
@@ -246,8 +224,8 @@ simple_multi_5x9_unsigned simple_multi_5x9_unsigned_inst (
 length_32_width_9_fifo length_32_width_9_fifo_inst (
   .clk(clk),                      // input
   .rst((~rst_n) | ram_rst),                      // input
-  .wr_en(wr_en_fifo),                  // input
-  .wr_data(mean_data_end),              // input [8:0]
+  .wr_en(done),                  // input
+  .wr_data(q[8:0]),              // input [8:0]
   .wr_full(),              // output
   .almost_full(),      // output
   .rd_en(rd_en_fifo),                  // input
@@ -255,4 +233,18 @@ length_32_width_9_fifo length_32_width_9_fifo_inst (
   .rd_empty(),            // output
   .almost_empty()     // output
 );
+
+
+divider_signed divider_signed_inst (
+	.dividend({ {14{sum_data[17]}},sum_data}), 
+	.divisor({23'd0,divide}), 
+	.start(start), 
+	.clock(clk), 
+	.reset(rst_n), 
+	.q(q), 
+	.r(), 
+	.busy(),
+    .done(done)
+);
+
 endmodule

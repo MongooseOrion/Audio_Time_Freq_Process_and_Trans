@@ -4,7 +4,7 @@ module mfcc_feature_extraction
     parameter DATA_WIDTH = 16,
     parameter FFT_LENGTH = 'd1024,
     parameter MELFB_NUMBER = 'd31,
-    parameter FRAME_NUMBER = 'd200
+    parameter FRAME_NUMBER = 'd300   //最大收集300帧
 )
 (   
     input                       clk,
@@ -13,11 +13,12 @@ module mfcc_feature_extraction
     input                       rs232_flag,
     input [7:0]                 rs232_data,
     output wire [8:0]           rd_data7,
-    input  wire [12:0]          rd_addr7,
+    input  wire [13:0]          rd_addr7,
 
     output reg                     voice_flag/*synthesis PAP_MARK_DEBUG="1"*/,
     output reg                     mfcc_extraction_end/*synthesis PAP_MARK_DEBUG="1"*/,
     input  wire signed [DATA_WIDTH - 1:0]     data_in, /*synthesis PAP_MARK_DEBUG="1"*/
+    output reg  [8:0]              mfcc_number,
 
     //fft相关
     output reg                      xn_axi4s_data_tvalid,
@@ -28,7 +29,12 @@ module mfcc_feature_extraction
     output reg                      xn_axi4s_cfg_tdata  ,
     input                           xk_axi4s_data_tvalid,
     input    [32*2-1:0]             xk_axi4s_data_tdata ,
-    input                           xk_axi4s_data_tlast              
+    input                           xk_axi4s_data_tlast    ,
+    output  reg                     voice_flag_reg  ,
+    input      [15:0]               voiceprint_vioce_out,
+    input                           fifo_ready ,  
+    output  wire                    rd_en_fifo ,    
+    input                           rd_start         
 
 );
 //求位数
@@ -40,7 +46,7 @@ function integer clog2;
             n = n >> 1;
     end
 endfunction
-parameter signed threshold_hign = 18000;
+parameter signed threshold_hign = 40000;
 parameter signed threshold_hign1 = 'd0;
 localparam  FFT_WIDTH      = clog2(FFT_LENGTH);    //10
 wire signed [DATA_WIDTH + FFT_WIDTH:0]         xk_axi4s_data_tdata_imag/*synthesis PAP_MARK_DEBUG="1"*/;
@@ -65,13 +71,13 @@ reg                        almost_full1_reg1;
 reg                        almost_full2_reg1;
 reg                        almost_full1_reg2;
 reg                        almost_full2_reg2;
-reg                        rd_en1;
+wire                        rd_en1;
 wire [15:0]                rd_data1;
 reg                        rd_en2;
 wire [15:0]                rd_data2;
 reg                        rd_en3;
 wire signed [15:0]         rd_data3/*synthesis PAP_MARK_DEBUG="1"*/;
-reg  [15:0]                wr_data3;
+wire  [15:0]                wr_data3;
 reg                        wr_en3;
 reg                        wr_en3_reg/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        start_rd;
@@ -84,10 +90,10 @@ reg  [FFT_WIDTH - 'd1:0]   fft_in_cnt;
 reg  [FFT_WIDTH - 'd1:0]   fft_out_cnt;  
 
 reg  [31:0]                wr_data4/*synthesis PAP_MARK_DEBUG="1"*/;
-wire [49:0]                p1;
-wire [49:0]                p2;
+wire [53:0]                p1;
+wire [53:0]                p2;
 
-reg  [49:0]                p3;  //能量，赋值的平方
+reg  [52:0]                p3;  //能量，赋值的平方
 
 reg                        wr_en4_reg/*synthesis PAP_MARK_DEBUG="1"*/;
 wire [31:0]                rd_data4/*synthesis PAP_MARK_DEBUG="1"*/;
@@ -98,12 +104,11 @@ reg                        rd_en4;
 reg [8:0]                  wr_addr5;
 reg                        wr_en5;
 reg [8:0]                  rd_addr5;
-wire  [49:0]                rd_data5;
+wire  [52:0]                rd_data5;
 
 reg  [13:0] melfb_addr;
 wire [8:0]  melfb_rd_data;
-wire [58:0] p4;
-wire [49:0] p4_1;
+wire [61:0] p4;
 
 
 wire [7:0]                 sin_rd_data/*synthesis PAP_MARK_DEBUG="1"*/;
@@ -128,7 +133,7 @@ wire signed [14:0] p5;
 wire signed [6:0] p5_1;
 reg  signed [16:0] wr_data7;
 wire signed [8:0] wr_data7_1/*synthesis PAP_MARK_DEBUG="1"*/;  //这个才是实际要写进去的
-reg [12:0] wr_addr7/*synthesis PAP_MARK_DEBUG="1"*/;
+reg [13:0] wr_addr7/*synthesis PAP_MARK_DEBUG="1"*/;
 reg        wr_en7/*synthesis PAP_MARK_DEBUG="1"*/;
 reg               flag1;
 reg  [2:0]        cnt1;
@@ -139,7 +144,19 @@ wire signed [15:0] pre_p1;
 reg  signed [15:0] pre_data;
 assign pre_p1 = pre_p[24:9];
 //定义变量，voice_flag跨时钟打拍
-reg              voice_flag_reg;
+// reg              voice_flag_reg;
+reg [26:0]       cnt_1s;
+reg   wr_en_256;
+reg [7:0]    cnt_256;
+reg [2:0]    delay_8;
+reg [9:0]    cnt_768;
+
+parameter        INIT2       = 4'b0001;
+parameter        RD_FIFO1    = 4'b0010;
+parameter        RD_FIFO2    = 4'b0100;
+parameter        DELAY       = 4'b1000;  //等待数据 
+reg  [3:0]   state2;
+
 parameter        START         = 8'b00000101;
 parameter        INIT         = 8'b00000000;
 parameter        FIFO_INIT    = 8'b00000011;
@@ -164,6 +181,10 @@ assign almost_full1_1 = ~almost_full1;
 assign almost_full2_2 = ~almost_full2;
 assign p_1 = p[23:8];
 
+assign rd_en1 = (state2 == RD_FIFO1) ? 1'b1 : 1'b0;
+assign rd_en_fifo = (state2 == RD_FIFO2) ? 1'b1 : 1'b0;
+assign wr_data3 = (state2 == RD_FIFO1 && state2 == DELAY) ? rd_data1 : voiceprint_vioce_out;
+
 always @(posedge sck or negedge rst_n) begin
     if (~rst_n) begin
         pre_data <= 'd0;
@@ -178,46 +199,44 @@ always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
         state <= START;
         mfcc_extraction_end <= 'd0;
+        mfcc_number <= 'd0;
     end
     else begin
         case (state)
             START : begin
-                if (rs232_data[7:4] == 4'b0101 && rs232_flag == 1'b1) begin   //命令来了收集200帧有效mfcc
+                if (rd_start == 1'b1) begin   
                     state <= INIT;
-                    
                 end
                 mfcc_extraction_end <= 'd0;
+                mfcc_number <= 'd0;
             end
             INIT: begin
-                if (wr_addr7 >= FRAME_NUMBER*MELFB_NUMBER) begin  //这一条优先级最高
+                if (rd_start == 1'b0) begin  //这一条优先级最高，收集完成了也退出收集
                     state <= START;
                     mfcc_extraction_end <= 1'b1;
                 end
-                else if (voice_flag_reg == 1'b0) begin
-                    state <= FIFO_INIT;
-                end
-                else if (voice_flag_reg == 1'b1 ) begin
+                else if (almost_full3 == 1'b1) begin
                     state <= WAIT_DATA;
                 end
                 // else begin
                 //     state <= WAIT_DATA;
                 // end
             end
-            FIFO_INIT : begin
-                if (voice_flag_reg == 1'b1 ) begin
-                    state <= WAIT_DATA;
-                end
-            end
+            // FIFO_INIT : begin
+            //     if (voice_flag_reg == 1'b1 ) begin
+            //         state <= WAIT_DATA;
+            //     end
+            //     else if (cnt_1s == 'd40000000 && wr_addr7 > 'd1000) begin  //连续0.4s没有有效信号，mfcc收集完成，
+            //         state <= START;
+            //         mfcc_extraction_end <= 1'b1;
+            //     end
+            // end
             WAIT_DATA: begin
-                if (almost_full3) begin
-                    state <= FFT_MODE_CFG;    //数据准备好就跳转到
-                end
-                else begin
-                    state <= WAIT_DATA;
-                end
+                state <= FFT_MODE_CFG;
             end
             FFT_MODE_CFG:begin
                 state <= SIN_WINDOW ;
+                mfcc_number <= mfcc_number + 1'b1;
             end
             SIN_WINDOW:begin
                 if (sin_data_cnt == (FFT_LENGTH - 1'b1)) begin
@@ -225,12 +244,20 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             FFT_DATA_IN:begin
-                if (fft_in_cnt == (FFT_LENGTH - 1'b1) ) begin
+                if (rd_start == 1'b0) begin  //这一条优先级最高，收集完成了也退出收集
+                    state <= START;
+                    mfcc_extraction_end <= 1'b1;
+                end
+                else if (fft_in_cnt == (FFT_LENGTH - 1'b1) ) begin
                     state <= FFT_DATA_OUT;
                 end
             end
             FFT_DATA_OUT:begin
-               if (xk_axi4s_data_tlast == 1'b1) begin
+                if (rd_start == 1'b0) begin  //这一条优先级最高，收集完成了也退出收集
+                    state <= START;
+                    mfcc_extraction_end <= 1'b1;
+                end
+                else if (xk_axi4s_data_tlast == 1'b1) begin
                     state <= MEL_FILTER;
                end
             end
@@ -250,7 +277,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             
-            default: state <= INIT;
+            default: state <= START;
         endcase
     end
 end
@@ -292,6 +319,7 @@ always @(posedge clk or negedge rst_n) begin
         dct_addr <= 'd0;
         cnt2     <= 'd0;
         fifo_rst2 <= 1'b0;
+        cnt_1s <= 'd0;
     end
     else begin
         case (state)
@@ -331,16 +359,17 @@ always @(posedge clk or negedge rst_n) begin
                 wr_en7   <= 'd0;
                 dct_addr <= 'd0;
                 cnt2 <= 'd0;
-                fifo_rst2 <= 1'b0;
                 wr_addr7 <= wr_addr7 ;
+                cnt_1s <= 'd0;
 
             end
-            FIFO_INIT : begin
-                fifo_rst2 <= 1'b1; 
-            end
+            // FIFO_INIT : begin
+            //     fifo_rst2 <= 1'b1; 
+            //     cnt_1s <= cnt_1s + 1'b1;  //无有效信号计数
+            // end
             WAIT_DATA:begin
-                fifo_rst2 <= 1'b0;
                 fifo_rst <= 1'b0; 
+                cnt_1s <= 'd0;
             end
             SIN_WINDOW :begin
                 a <= rd_data3;
@@ -390,7 +419,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             FFT_DATA_OUT : begin
                 cnt4 <= 'd0;
-                p3 = p1[48:0] + p2[48:0]; //计算能量
+                p3 = p1[51:0] + p2[51:0]; //计算能量
                 if (xk_axi4s_data_tvalid == 1'b1) begin
                     fft_out_cnt <= fft_out_cnt + 1'b1;
                 end
@@ -607,151 +636,108 @@ begin
         wr_en4_reg1 <= 'd0;
     end
 end
-//cnt计数
-always @(posedge sck or negedge rst_n)
-begin
-    if(~rst_n) begin
-        cnt_512 <= 'd0;
+
+
+
+//状态机跳转
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        state2 <= INIT2;
     end
     else begin
-        cnt_512 <= cnt_512 + 1'b1;
+        case (state2)
+            INIT2 : begin
+                if (rd_start == 1'b1 && almost_full3 == 1'b0 && fifo_ready == 1'b1) begin
+                    state2 <= RD_FIFO1;
+                end
+            end
+            RD_FIFO1 : begin
+                if (cnt_256 == 'd255) begin
+                    state2 <= DELAY;
+                end
+            end
+            RD_FIFO2 : begin
+                if (cnt_768 == 'd767) begin
+                    state2 <= INIT2;
+                end
+            end
+            DELAY : begin
+                if (delay_8 == 'd7) begin
+                    state2 <= RD_FIFO2;
+                end
+            end
+            default: state2 <= INIT2;
+        endcase
     end
 end
 
-//写delay_128_fifo 使能生成
-always @(posedge sck or negedge rst_n)
-begin
-    if(~rst_n) begin
-        delay_128_wr_en <= 'd0;
-    end
-    else if(cnt_512 == (FFT_LENGTH/2 - 1'b1)) begin
-        delay_128_wr_en <= 1'b1;
+
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        cnt_256 <= 'd0;
+        delay_8 <= 'd0;
+        cnt_768 <= 'd0;
     end
     else begin
-        delay_128_wr_en <= delay_128_wr_en;
+        case (state2)
+            INIT2 : begin
+                cnt_256 <= 'd0;
+                delay_8 <= 'd0;
+                cnt_768 <= 'd0;
+            end
+            RD_FIFO1 : begin
+                cnt_256 <= cnt_256 + 1'b1;
+            end
+            RD_FIFO2 : begin
+                cnt_768 <= cnt_768 + 1'b1;
+            end
+            DELAY : begin
+                delay_8 <= delay_8 + 1'b1;
+            end
+        endcase
     end
 end
 
-//////////////////在clk时钟下，生成将两个fifo的数据的读使能 与交叉写进另外一个fifo的写使能，模拟移动步长
 
-always @(posedge clk or negedge rst_n)   //实际上连的是几乎空，因为读时钟比写时钟快很多，而几乎满是在写时钟下控制的
-begin
-    if(~rst_n) begin
-        almost_full1_reg1 <= 1'b0;
-        almost_full2_reg1 <= 1'b0;
-        almost_full1_reg2 <= 1'b0;
-        almost_full2_reg2 <= 1'b0;
-        log_rd_data_reg <= 'd0;
+
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        wr_en3_reg <= 1'b0;
     end
     else begin
-        almost_full1_reg1 <= almost_full1_1;
-        almost_full2_reg1 <= almost_full2_2;
-        almost_full1_reg2 <= almost_full1_reg1;
-        almost_full2_reg2 <= almost_full2_reg1;
-        log_rd_data_reg <= log_rd_data;
-    end
-end
-
-always @(posedge clk or negedge rst_n)
-begin
-    if(~rst_n) begin
-        start_rd <= 'd0;
-    end
-    else if (start_rd_cnt == (FFT_LENGTH - 1'b1)) begin
-        start_rd <= 1'b0;
-    end
-    else if(almost_full1_reg2 & almost_full2_reg2) begin
-        start_rd <= 'd1;
-    end
-    else begin
-        start_rd <= start_rd;
-    end
-end
-
-always @(posedge clk or negedge rst_n)
-begin
-    if(~rst_n) begin
-        start_rd_cnt <= 'd0;
-    end
-    else if (start_rd == 1'b0 && wr_en3_reg == 'd0) begin
-        start_rd_cnt <= 'd0;
-    end
-    else if(start_rd == 1'b1) begin
-        start_rd_cnt <= start_rd_cnt + 1'b1;
-    end
-end
-
-always @(posedge clk or negedge rst_n)
-begin
-    if(~rst_n) begin
-        rd_en1 <= 'd0;
-        rd_en2 <= 'd0;
-    end
-    else if(start_rd_cnt <= (FFT_LENGTH/2 - 1'b1)) begin
-        rd_en1 <= start_rd;
-        wr_data3 <= rd_data1;
-        rd_en2 <= 1'b0;
-    end
-    else if(start_rd_cnt == (FFT_LENGTH/2) || start_rd_cnt == (FFT_LENGTH/2 + 1'b1)) begin
-        rd_en2 <= start_rd;
-        wr_data3 <= rd_data1;
-        rd_en1 <= 1'b0;
-    end
-    else begin
-        rd_en2 <= start_rd;
-        wr_data3 <= rd_data2;
-        rd_en1 <= 1'b0;      
+        wr_en3_reg <= rd_en1 | rd_en_fifo;
     end
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(~rst_n) begin
-        wr_en3 <= 'd0;
-        wr_en3_reg <= 'd0;
+    if (~rst_n) begin
+        wr_en_256 <= 1'b0;
     end
-    else  begin
-        wr_en3 <= rd_en1 + rd_en2;
-        wr_en3_reg <= wr_en3;
+    else if(cnt_768 >= ('d768-'d256) && cnt_768 <= 'd767) begin
+        wr_en_256 <= 1'b1;
+    end
+    else begin
+        wr_en_256 <= 1'b0;
     end
 end
 
-
-
-
-
-Dual_length_2048_almost_1024_fifo nomal_fifo (
-  .wr_clk(sck),                // input
-  .wr_rst(~rst_n),                // input
-  .wr_en(rst_n),                  // input
-  .wr_data(data_in),              // input [15:0]
+//存储重叠部分的fifo
+i_9_16_a_256_fifo i_9_16_a_256_fifo_inst (
+  .clk(clk),                      // input
+  .rst(~rd_start),                      // input
+  .wr_en(wr_en_256),                  // input
+  .wr_data(voiceprint_vioce_out),              // input [15:0]
   .wr_full(),              // output
-  .almost_full(),      // output+
-  .rd_clk(clk),                // input
-  .rd_rst(~rst_n),                // input
+  .almost_full(),      // output
   .rd_en(rd_en1),                  // input
   .rd_data(rd_data1),              // output [15:0]
   .rd_empty(),            // output
-  .almost_empty(almost_full1)     // output
-);
-
-Dual_length_1024_almost_512_fifo delay_128_fifo (
-  .wr_clk(sck),                // input
-  .wr_rst(~rst_n),                // input
-  .wr_en(delay_128_wr_en),                  // input
-  .wr_data(data_in),              // input [15:0]
-  .wr_full(),              // output
-  .almost_full(),      // output
-  .rd_clk(clk),                // input
-  .rd_rst(~rst_n),                // input
-  .rd_en(rd_en2),                  // input
-  .rd_data(rd_data2),              // output [15:0]
-  .rd_empty(),            // output
-  .almost_empty(almost_full2)     // output
+  .almost_empty()     // output
 );
 
 Single_length_2048_almost_1024_fifo data_merge_fifo (  //这个FIFO是模拟移动步长为128，256个数据，一帧的暂存
   .clk(clk),                      // input
-  .rst((~rst_n) | fifo_rst2),                      // input
+  .rst(~rd_start),                      // input
   .wr_en(wr_en3_reg),                  // input
   .wr_data(wr_data3),              // input [15:0]
   .wr_full(),              // output
@@ -803,14 +789,14 @@ dct_data_rom dct_data_rom_inst (    //dct离散余弦变换,这里是查找表,�
   .rd_data(dct_rd_data)     // output [8:0]
 );
 
-single_length_512_width_50_ram single_length_512_width_50_ram_inst (  //存储一整fft后的能量幅值
-  .wr_data(p3),    // input [49:0]
+single_length_512_width_53_ram single_length_512_width_53_ram_inst (  //存储一整fft后的能量幅值
+  .wr_data(p3),    // input [52:0]
   .wr_addr(wr_addr5),    // input [8:0]
   .wr_en(wr_en5),        // input
   .wr_clk(clk),      // input
   .wr_rst(~rst_n),      // input
   .rd_addr(rd_addr5),    // input [8:0]
-  .rd_data(rd_data5),    // output [49:0]
+  .rd_data(rd_data5),    // output [52:0]
   .rd_clk(clk),      // input
   .rd_rst(~rst_n)       // input
 );
@@ -828,13 +814,13 @@ length_32_width_57_ram length_32_width_57_ram_inst (  //存储梅谱滤波后的
   .rd_rst(~rst_n)       // input
 );
 
-mfcc_result_8096_9_ram mfcc_result_8096_9_ram_inst (  //存储多帧mfcc的结果
+mfcc_result_14_9_ram mfcc_result_14_9_ram_inst (  //存储多帧mfcc的结果
   .wr_data(wr_data7_1),    // input [8:0]
-  .wr_addr(wr_addr7),    // input [12:0]
+  .wr_addr(wr_addr7),    // input [13:0]
   .wr_en(wr_en7),        // input
   .wr_clk(clk),      // input
   .wr_rst(~rst_n),      // input
-  .rd_addr(rd_addr7),    // input [12:0]
+  .rd_addr(rd_addr7),    // input [13:0]
   .rd_data(rd_data7),    // output [8:0]
   .rd_clk(clk),      // input
   .rd_rst(~rst_n)       // input
@@ -849,22 +835,22 @@ simmpe_mult simmpe_mult_inst (  //加窗计算乘法器
   .p(p)         // output [23:0]
 );
 
-simple_multi_25x25 simple_multi_25x25_inst1 (  //能量计算乘法器
-  .a(xk_axi4s_data_tdata_real),        // input [24:0]
-  .b(xk_axi4s_data_tdata_real),        // input [24:0]
+sim_multi_27x27_signed sim_multi_27x27_signed_inst1 (  //能量计算乘法器
+  .a(xk_axi4s_data_tdata_real),        // input [26:0]
+  .b(xk_axi4s_data_tdata_real),        // input [26:0]
   .clk(clk),    // input
   .rst(~rst_n),    // input
   .ce(1'b1),      // input
-  .p(p1)         // output [49:0]
+  .p(p1)         // output [53:0]
 );
 
-simple_multi_25x25 simple_multi_25x25_inst2 ( // 能量计算乘法器
-  .a(xk_axi4s_data_tdata_imag),        // input [24:0]
-  .b(xk_axi4s_data_tdata_imag),        // input [24:0]
+sim_multi_27x27_signed sim_multi_27x27_signed_inst2 ( // 能量计算乘法器
+  .a(xk_axi4s_data_tdata_imag),        // input [26:0]
+  .b(xk_axi4s_data_tdata_imag),        // input [26:0]
   .clk(clk),    // input
   .rst(~rst_n),    // input
   .ce(1'b1),      // input
-  .p(p2)         // output [49:0]
+  .p(p2)         // output [53:0]
 );
 
 simple_multi_16x9 simple_multi_16x9_inst (
@@ -876,13 +862,13 @@ simple_multi_16x9 simple_multi_16x9_inst (
   .p(pre_p)         // output [24:0]
 );
 
-simple_multi_50x9 simple_multi_50x9_inst (  //melfb 梅谱滤波计算乘法器
-  .a(rd_data5),        // input [49:0]
+simple_multi_53x9 simple_multi_53x9_inst (  //melfb 梅谱滤波计算乘法器
+  .a(rd_data5),        // input [52:0]
   .b(melfb_rd_data),        // input [8:0]
   .clk(clk),    // input
   .rst(~rst_n),    // input
   .ce(1'b1),      // input
-  .p(p4)         // output [58:0]
+  .p(p4)         // output [61:0]
 );
 
 simple_multi_6x9 simple_multi_6x9_inst (   //dct离散余弦计算

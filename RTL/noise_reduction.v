@@ -15,6 +15,8 @@ module noise_reduction
     output wire [DATA_WIDTH - 1:0]  data_out/*synthesis PAP_MARK_DEBUG="1"*/,
     input  signed[DATA_WIDTH - 1:0]     data_in, /*synthesis PAP_MARK_DEBUG="1"*/
     input                       rst_rs232,
+    input                       rs232_flag,
+    input [7:0]                 rs232_data,
     //fft相关
     
     output reg                      xn_axi4s_data_tvalid,
@@ -23,7 +25,7 @@ module noise_reduction
     input                           xn_axi4s_data_tready,
     output wire                     xn_axi4s_cfg_tvalid ,
     output reg                      xn_axi4s_cfg_tdata  ,
-    input                           xk_axi4s_data_tvalid,
+    input                           xk_axi4s_data_tvalid/*synthesis PAP_MARK_DEBUG="1"*/,
     input    [32*2-1:0]             xk_axi4s_data_tdata ,
     input                           xk_axi4s_data_tlast ,
     input    [3:0]                  SPLIT_MODE  /*synthesis PAP_MARK_DEBUG="1"*/ ,
@@ -90,7 +92,7 @@ reg                        xn_axi4s_data_tvalid1;
 reg  [2:0]                 cnt4;
 reg  [FFT_WIDTH - 'd1:0]   fft_in_cnt;
 reg  [1:0]                 fft_mode_cnt;
-reg  [31:0]                wr_data4/*synthesis PAP_MARK_DEBUG="1"*/;
+// reg  [31:0]                wr_data4/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        wr_en5;
 reg                        wr_en5_reg/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        wr_en4_reg/*synthesis PAP_MARK_DEBUG="1"*/;
@@ -130,12 +132,36 @@ reg  [9:0]                 zeroCrossing_cnt2_reg/*synthesis PAP_MARK_DEBUG="1"*/
 reg  signed [15:0]         wr_data3_reg/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        frame_valid_en2/*synthesis PAP_MARK_DEBUG="1"*/;
 
+reg  [31:0]                wr_data4;
+
 reg [FFT_WIDTH - 'd1:0]    voice_cnt/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        frame_valid_en/*synthesis PAP_MARK_DEBUG="1"*/; 
 reg [SMALL_FRAME_WIDTH - 'd1:0] frame_valid_cnt/*synthesis PAP_MARK_DEBUG="1"*/;
 reg [TOTAL_FRAME_WIDTH - 'd1:0] frame_CNT/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        rd_en3_reg/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                        rd_en3_pose_flag/*synthesis PAP_MARK_DEBUG="1"*/;
+
+reg [7:0] xk_axi4s_data_tlast_cnt;
+reg  [23:0] wr_data6_real;
+reg  [23:0] wr_data6_imag;
+reg [9:0]  wr_addr6;
+reg wr_en6_1;
+reg wr_en6_reg;
+reg [9:0]  rd_addr6;
+wire [23:0] rd_data6_real;
+wire [23:0] rd_data6_imag;
+wire [15:0] rd_data6_real1/*synthesis PAP_MARK_DEBUG="1"*/;
+wire [15:0] rd_data6_imag1/*synthesis PAP_MARK_DEBUG="1"*/;
+reg [15:0] real2;
+reg [15:0] imag2;
+reg [15:0] xk_axi4s_data_tdata_real_reg/*synthesis PAP_MARK_DEBUG="1"*/;
+reg [15:0] xk_axi4s_data_tdata_imag_reg/*synthesis PAP_MARK_DEBUG="1"*/;
+assign rd_data6_real1 = rd_data6_real[22:7]/*synthesis PAP_MARK_DEBUG="1"*/;
+assign rd_data6_imag1 = rd_data6_imag[22:7]/*synthesis PAP_MARK_DEBUG="1"*/;
+reg [9:0] wr_addr7;
+reg wr_en7;
+reg [9:0] rd_addr7;
+wire rd_data7;
 
 
 reg  [3:0]                 cnt5;
@@ -256,6 +282,7 @@ always @(posedge clk or negedge rst_n) begin
         rd_en3 <= 'd0;
         noise_addr <= 'd0;
         vocal_addr <= 'd0;
+        rd_addr7 <= 'd0;
         wr_en4 <= 'd0;
         cnt4   <= 'd0;
         rd_en4 <= 'd0;
@@ -291,6 +318,7 @@ always @(posedge clk or negedge rst_n) begin
                 rd_en3 <= 'd0;
                 noise_addr <= 'd0;
                 vocal_addr <= 'd0;
+                rd_addr7 <= 'd0;
                 wr_en4 <= 'd0;
                 cnt4   <= 'd0;
                 rd_en4 <= 'd0;
@@ -380,6 +408,7 @@ always @(posedge clk or negedge rst_n) begin
                     wr_en4 <= 1'b1;
                     noise_addr <= noise_addr + 1'b1;
                     vocal_addr <= vocal_addr + 1'b1;
+                    rd_addr7 <= rd_addr7 + 1'b1;
                     sing_addr <= sing_addr + 1'b1;
                     move_rhythm_addr <= move_rhythm_addr + 1'b1;
                     rhythm_addr <= rhythm_addr + 1'b1;
@@ -422,6 +451,7 @@ always @(posedge clk or negedge rst_n) begin
                     noise_addr <= noise_addr;
                     vocal_addr <= vocal_addr;
                     sing_addr <= sing_addr;
+                    rd_addr7 <= rd_addr7;
                     move_rhythm_addr <= move_rhythm_addr;
                     rhythm_addr <= rhythm_addr ;
                     split_sing_vocal_addr <= split_sing_vocal_addr ;
@@ -681,6 +711,10 @@ begin
         split_rd_data1 <= noise_reduction_rd_data ;
         fft_result_data <= {imag1,real1};
     end
+    else if (SPLIT_MODE == 'd7) begin
+        split_rd_data <= {TOTAL_FRAME{rd_data7}};
+        fft_result_data <= {imag1,real1};
+    end
     
 end
 
@@ -700,6 +734,9 @@ begin
         wr_en4_reg1 <= wr_en4;
         wr_en4_reg <= wr_en4_reg1;
         if (split_rd_data1[TOTAL_FRAME - 'd4 - frame_CNT1 ] == 1'b1 && SPLIT_MODE == 'd6) begin
+            wr_data4 <= 'd0;
+        end
+        else if (SPLIT_MODE == 'd7 && split_rd_data[0] == 1'b1) begin
             wr_data4 <= 'd0;
         end
         else if (split_rd_data[TOTAL_FRAME - 'd1 - frame_CNT1] == 1'b1 && SPLIT_MODE != 'd6) begin
@@ -834,7 +871,247 @@ always @(posedge sck or negedge rst_n) begin  //输出最终数据的使能
     end
 end
 
+//自适应降噪模块
+//串口接收数据，开始自适应收集频谱使能
+reg     clloct_start/*synthesis PAP_MARK_DEBUG="1"*/;
+reg     rst_2;
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        clloct_start <= 1'b0;
+        rst_2 <= 1'b0;
+    end
+    else if (rs232_data == 8'b00110001 && rs232_flag == 1'b1) begin
+        clloct_start <= 1'b1;
+        rst_2 <= 1'b1;
+    end
+    else if (xk_axi4s_data_tlast_cnt == 'd128) begin   //收集128个数据后，停止收集
+        clloct_start <= 1'b0;
+        rst_2 <= 1'b0;
+    end
+    else begin
+        rst_2 <= 1'b0;
+    end
+end
+//xk_axi4s_data_tlast 计数
 
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        xk_axi4s_data_tlast_cnt <= 'd0;
+    end
+    else if (xk_axi4s_data_tlast_reg == 1'b1 && clloct_start == 1'b1 && fft_mode_cnt == 'd1) begin
+        xk_axi4s_data_tlast_cnt <= xk_axi4s_data_tlast_cnt + 1'b1;
+    end
+    else if (clloct_start == 1'b0) begin
+        xk_axi4s_data_tlast_cnt <= 'd0;
+    end
+end
+
+//rd_addr6 在xk_axi4s_data_tvalid自增
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        rd_addr6 <= 'd0;
+    end
+    else if (xk_axi4s_data_tvalid == 1'b1  && fft_mode_cnt == 'd1) begin
+        rd_addr6 <= rd_addr6 + 1'b1;
+    end
+    else begin
+        rd_addr6 <= 'd0;
+    end
+end
+
+reg clloct_start_reg;
+//xk_axi4s_data_tdata_real_reg,xk_axi4s_data_tdata_imag_reg 用来存储xk_axi4s_data_tdata的值
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        xk_axi4s_data_tdata_real_reg <= 'd0;
+        xk_axi4s_data_tdata_imag_reg <= 'd0;
+        real2 <= 'd0;
+        imag2 <= 'd0;
+        clloct_start_reg <= 'd0;
+    end
+    else begin
+        //负数变正数，三目运算符
+        xk_axi4s_data_tdata_real_reg <= (xk_axi4s_data_tdata[15] == 1'b0) ? xk_axi4s_data_tdata[15:0] :~(xk_axi4s_data_tdata[15:0] - 1'b1);
+        xk_axi4s_data_tdata_imag_reg <= (xk_axi4s_data_tdata[47] == 1'b0) ? xk_axi4s_data_tdata[47:32]:~(xk_axi4s_data_tdata[47:32] - 1'b1);
+        real2 <= real1 - rd_data6_real1;
+        imag2 <= imag1 - rd_data6_imag1;
+        clloct_start_reg <= clloct_start;
+
+    end
+end
+
+//wr_data6_real,wr_data6_imag :xk_axi4s_data_tdata_real_reg+rd_data6_real
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        wr_data6_real <= 'd0;
+        //wr_data6_imag <= 'd0;
+        wr_en6_reg <= 1'b0;
+    end
+    else begin
+        wr_data6_real <= xk_axi4s_data_tdata_real_reg + rd_data6_real + xk_axi4s_data_tdata_imag_reg;
+        //wr_data6_imag <= xk_axi4s_data_tdata_imag_reg + rd_data6_imag;
+        wr_en6_reg <= wr_en6_1;
+
+    end
+
+end
+
+//wr_en6 为xk_axi4s_data_tvalid 打两拍
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        wr_en6_1 <= 1'b0;
+    end
+    else if (xk_axi4s_data_tvalid == 1'b1 && fft_mode_cnt == 'd1 && clloct_start == 1'b1) begin
+        wr_en6_1 <= 1'b1;
+    end
+    else begin
+        wr_en6_1 <= 1'b0;
+    end
+end
+
+//wr_addr6 在wr_en6_reg为1时自增
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        wr_addr6 <= 'd0;
+    end
+    else if (wr_en6_reg == 1'b1) begin
+        wr_addr6 <= wr_addr6 + 1'b1;
+    end
+    else begin
+        wr_addr6 <= 'd0;
+    end
+end
+
+//噪音幅度值大小排序算法，状态机实现
+reg  [4:0]  state2;
+parameter INTI2 = 5'b00001;
+parameter WAIT_DATA2 = 5'b00010;
+parameter WR_ADDR = 5'b00100;  //生成对称坐标的值
+parameter WR_EN  = 5'b01000;
+
+parameter paixu_number = 'd25;
+
+reg [4:0]  paixu_cnt;
+reg  cnt_1;
+reg [23:0]   max_value;
+reg [23:0]   max_value_last;
+
+//状态机跳转
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        state2 <= INTI2;
+    end
+    else begin
+        case(state2)
+            INTI2:begin
+                if (clloct_start_reg &(~clloct_start)) begin
+                    state2 <= WAIT_DATA2;
+                end
+            end
+            WAIT_DATA2:begin
+                if (xk_axi4s_data_tlast_reg == 1'b1 && fft_mode_cnt == 'd1) begin
+                    state2 <= WR_EN;
+                end
+            end
+            WR_ADDR:begin
+                state2 <= WR_EN;
+            end
+            WR_EN:begin
+                if (paixu_cnt == paixu_number) begin
+                    state2 <= INTI2;
+                end
+                else if (cnt_1 == 1'b1) begin
+                    state2 <= WAIT_DATA2;
+                end
+                else begin
+                    state2 <= WR_ADDR;
+                end
+            end
+        endcase
+    end
+end
+//内部信号
+always @(posedge clk or negedge rst_n) begin
+    if (~rst_n) begin
+        cnt_1 <= 1'b0;
+        wr_en7 <= 1'b0;
+        max_value_last <= {24{1'b1}};
+        max_value <= 'd0;
+        wr_addr7 <= 'd0;
+        paixu_cnt <= 'd0;
+    end
+    else begin
+        case(state2)
+            INTI2:begin
+                cnt_1 <= 1'b0;
+                wr_en7 <= 1'b0;
+                max_value_last <= {24{1'b1}};
+                max_value <= 'd0;
+                wr_addr7 <= 'd0;
+                paixu_cnt <= 'd0;
+            end
+            WAIT_DATA2:begin
+                cnt_1 <= 1'b0;
+                wr_en7 <= 1'b0;
+                if (rd_addr6 >= 'd1) begin
+                    if (max_value < rd_data6_real && rd_data6_real < max_value_last) begin
+                        max_value <= rd_data6_real;
+                        wr_addr7 <= rd_addr6 - 1'b1;
+                    end
+                end
+            end
+            WR_ADDR:begin
+                wr_en7 <= 1'b0;
+                wr_addr7 <=  'd1024 - wr_addr7 ;
+                paixu_cnt <= paixu_cnt + 1'b1;
+                max_value_last <= max_value;
+                max_value <= 'd0;
+            end
+            WR_EN:begin
+                cnt_1 <= cnt_1 + 1'b1;
+                wr_en7 <= 1'b1;
+            end
+        endcase
+    end
+end
+
+i_10_24_ram i_10_24_ram1 (
+  .wr_data(wr_data6_real),    // input [23:0]
+  .wr_addr(wr_addr6),    // input [9:0]
+  .wr_en(wr_en6_reg),        // input
+  .wr_clk(clk),      // input
+  .wr_rst(rst_2),      // input
+  .rd_addr(rd_addr6),    // input [9:0]
+  .rd_data(rd_data6_real),    // output [23:0]
+  .rd_clk(clk),      // input
+  .rd_rst(rst_2)       // input
+);
+
+
+
+i_1_10_ram i_1_10_ram (
+  .wr_data(1'b1),    // input
+  .wr_addr(wr_addr7),    // input [9:0]
+  .wr_en(wr_en7),        // input
+  .wr_clk(clk),      // input
+  .wr_rst(rst_2),      // input
+  .rd_addr(rd_addr7),    // input [9:0]
+  .rd_data(rd_data7),    // output
+  .rd_clk(clk),      // input
+  .rd_rst(rst_2)       // input
+);
+
+// i_10_24_ram i_10_24_ram2 (
+//   .wr_data(wr_data6_imag),    // input [23:0]
+//   .wr_addr(wr_addr6),    // input [9:0]
+//   .wr_en(wr_en6_reg),        // input
+//   .wr_clk(clk),      // input
+//   .wr_rst(rst_2),      // input
+//   .rd_addr(rd_addr6),    // input [9:0]
+//   .rd_data(rd_data6_imag),    // output [23:0]
+//   .rd_clk(clk),      // input
+//   .rd_rst(rst_2)       // input
+// );
 
 Dual_length_2048_almost_1024_fifo nomal_fifo (
   .wr_clk(sck),                // input

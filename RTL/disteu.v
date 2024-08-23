@@ -1,7 +1,7 @@
 module disteu
 #(
     parameter DATA_WIDTH         = 'd9,
-    parameter ADDR_WIDTH         = 'd13,
+    parameter ADDR_WIDTH         = 'd14,
     parameter DISTEU_RESULT_NUBMER = 'd31,
     parameter MEAN_FRAME_WIDTH   = 'd9 
 )
@@ -247,14 +247,14 @@ always @(posedge clk or negedge rst_n) begin
             COMPUTE_INIT:begin
 
                 if (cfg_mode_data_reg[5:4] == 2'b00 ) begin
-                    rd_addr_d <= p[12:0] ;
+                    rd_addr_d <= p[ADDR_WIDTH-1'b1:0] ;
                     rd_addr   <= rd_addr + 1'b1;
                     rd_addr_r <= addr_start[cfg_mode_data_reg[3:0]] ;
                     cnt1 <= 'd0;
                     sum_data <= 'd0;
                 end
                 else if (cfg_mode_data_reg[5:4] == 2'b01 || cfg_mode_data_reg[5:4] == 2'b10) begin
-                    rd_addr_d <= p[12:0] ;
+                    rd_addr_d <= p[ADDR_WIDTH-1'b1:0] ;
                     rd_addr_r <= addr_start[cnt2] ;
                     cnt1 <= 'd0;
                     sum_data <= 'd0;

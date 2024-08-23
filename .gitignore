@@ -5,3 +5,7 @@ project.old/
 Document/datasheet/
 *.vsdx
 dataset
+*.ipynb
+*/rename.py
+*.docx
+*.doc

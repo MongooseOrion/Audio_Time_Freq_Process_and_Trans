@@ -1,6 +1,7 @@
-//
-//
-//
+//******************************************************************
+
+//******************************************************************
+`timescale 1ns/1ns
 module ehco_Cancelling
 #(  
     parameter DATA_WIDTH = 8
@@ -20,7 +21,7 @@ wire                almost_full/*synthesis PAP_MARK_DEBUG="1"*/;
 reg                 rd_en/*synthesis PAP_MARK_DEBUG="1"*/;
 wire  signed[15:0]  rd_data/*synthesis PAP_MARK_DEBUG="1"*/;
 wire  signed[15:0]  p_1/*synthesis PAP_MARK_DEBUG="1"*/;
-wire [14:0]         wr_water_level;
+wire [14:0]         wr_water_level/*synthesis PAP_MARK_DEBUG="1"*/;
 wire [31:0]         p;
 reg                 rs232_flag_clk_to_sck;
 reg                 rs232_flag_sck_reg1;
@@ -35,24 +36,24 @@ assign p_1 = p[31:16];
 always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n) begin
-        set_delay <= 'd7998;
+        set_delay <= 'd7996;
         set_echo_Attenuation_factor <= 'd32767;
     end
     else if(rs232_flag==1'b1 && rs232_data[7:0] == 8'b00011111) begin
-        set_delay <= 'd7998;
+        set_delay <= 'd7996;
         set_echo_Attenuation_factor <= 'd32767;
     end
     else if(rs232_flag==1'b1 && rs232_data[7:0] == 8'b00010001) begin
-        set_delay <=set_delay + 'd1000;
+        set_delay <=set_delay + 'd1;
     end
     else if (rs232_flag==1'b1 && rs232_data[7:0] == 8'b00010010) begin
-        set_delay <=set_delay - 'd1000;
+        set_delay <=set_delay - 'd1;
     end
     else if(rs232_flag==1'b1 && rs232_data[7:0] == 8'b00011001) begin
-        set_echo_Attenuation_factor <=set_echo_Attenuation_factor + 'd20;
+        set_echo_Attenuation_factor <=set_echo_Attenuation_factor + 'd200;
     end
     else if (rs232_flag==1'b1 && rs232_data[7:0] == 8'b00011010) begin
-        set_echo_Attenuation_factor <=set_echo_Attenuation_factor - 'd20;
+        set_echo_Attenuation_factor <=set_echo_Attenuation_factor - 'd200;
     end
 end
 
@@ -87,7 +88,7 @@ begin
     if (~rst_n) begin
         rs232_flag_sck_reg1 <= 'd0;
         rs232_flag_sck_reg2 <= 'd0;
-        set_delay_sck <= 'd0;
+        set_delay_sck <= 'd7996;
         set_echo_Attenuation_factor_sck <= 'd0;
     end
     else begin
@@ -120,12 +121,12 @@ begin
     if(~rst_n) begin
         data_out <= 'd0;
     end
-    else if ((data_in - p_1)>=threshold_hign) begin
-        data_out <= 16'b0111111111111111;
-    end
-    else if ((data_in - p_1)<=threshold_low) begin
-        data_out <= 16'b1000000000000000;
-    end
+    // else if ((data_in - p_1)>=threshold_hign) begin
+    //     data_out <= 16'b0111111111111111;
+    // end
+    // else if ((data_in - p_1)<=threshold_low) begin
+    //     data_out <= 16'b1000000000000000;
+    // end
     else begin
         data_out <= data_in - p_1;
     end

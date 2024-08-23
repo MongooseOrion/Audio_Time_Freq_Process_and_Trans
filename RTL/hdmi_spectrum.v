@@ -63,6 +63,7 @@ wire [25:0] rd_data_ram1;
 wire [25:0] rd_data_ram2;
 reg    cnt1;
 reg [7:0]  rs232_data_reg;
+reg [7:0]  rs232_data_reg1;
 reg [23:0]  color_char = 24'hffffff;
 // always @(posedge clk) begin
 //     if (rs232_flag == 1'b1) begin
@@ -120,9 +121,12 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+//打两排脉冲
+
 always @(posedge pix_clk) begin
     p1 <= {18{1'b1}} - p;
-    rs232_data_reg <= rs232_data;
+    rs232_data_reg1 <= rs232_data;
+    rs232_data_reg <= rs232_data_reg1;
 end
 
 always @(posedge clk or negedge rst_n) begin

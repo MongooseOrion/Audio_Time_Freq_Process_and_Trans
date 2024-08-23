@@ -1,9 +1,6 @@
 module voiceprint_recognition 
 #(
-    parameter DATA_WIDTH = 16,
-    parameter FFT_LENGTH = 'd1024,
-    parameter MELFB_NUMBER = 'd20,
-    parameter FRAME_NUMBER = 'd300
+    parameter DATA_WIDTH = 16
 )
 (   
     input                       clk,
@@ -27,16 +24,21 @@ module voiceprint_recognition
     input                           xk_axi4s_data_tlast ,
     output  [2:0]                   recognition_result  /*synthesis PAP_MARK_DEBUG="1"*/,
     output                          recognition_result_flag/*synthesis PAP_MARK_DEBUG="1"*/  ,
-    output                          train_down      
+    output                          train_down  ,
+    output                          audio_data_valid  ,
+    input  [15:0]                   voiceprint_vioce_out,
+    input                           almost_full1 ,  
+    output                          rd_en_fifo ,    
+    input                           rd_start        
 
 );
 wire [8:0]           mfcc_data;   // 
-reg  [12:0]          mfcc_addr;
-wire  [12:0]          mfcc_addr1;
-wire  [12:0]          mfcc_addr2;
+reg  [13:0]          mfcc_addr;
+wire  [13:0]          mfcc_addr1;
+wire  [13:0]          mfcc_addr2;
 wire [8:0]           vqlbg_data;
 wire [10:0]          vplbg_addr;
-
+wire [8:0]           mfcc_number;
 always @(*) begin
     if (rs232_rx_data[7:3] == 5'b01011  ) begin  //识别阶段
         mfcc_addr <= mfcc_addr2;
@@ -47,7 +49,7 @@ always @(*) begin
 end
 
 mfcc_feature_extraction#(            //提取mfcc特征
-    .DATA_WIDTH(16)
+    .DATA_WIDTH(DATA_WIDTH)
 )mfcc_feature_extraction(
     .rst_n          (rst_n),// input
     .sck            (sck   ),// input
@@ -67,22 +69,28 @@ mfcc_feature_extraction#(            //提取mfcc特征
     .rs232_data         (rs232_rx_data),
     .rd_data7           (mfcc_data  ),
     .rd_addr7           (mfcc_addr  ),
-    .mfcc_extraction_end(mfcc_extraction_end)
-
+    .mfcc_extraction_end(mfcc_extraction_end),
+    .mfcc_number        (mfcc_number),
+    .voice_flag_reg     (audio_data_valid),
+    .voiceprint_vioce_out(voiceprint_vioce_out),
+    .fifo_ready     (almost_full1),
+    .rd_en_fifo     (rd_en_fifo),
+    .rd_start       (rd_start)
 
 );
 
 vqlbg_train vqlbg_train_inst
 (
-.clk(clk),
-.rst_n(rst_n),
-.rs232_rx_data(rs232_rx_data),
-.mfcc_extraction_end(mfcc_extraction_end),
-.mfcc_addr(mfcc_addr1),
-.mfcc_data(mfcc_data),
-.vqlbg_addr(vplbg_addr),
-.vqlbg_rd_data(vqlbg_data),
-.train_down(train_down)
+    .clk(clk),
+    .rst_n(rst_n),
+    .rs232_rx_data(rs232_rx_data),
+    .mfcc_extraction_end(mfcc_extraction_end),
+    .mfcc_addr(mfcc_addr1),
+    .mfcc_data(mfcc_data),
+    .vqlbg_addr(vplbg_addr),
+    .vqlbg_rd_data(vqlbg_data),
+    .train_down(train_down),
+    .mfcc_number(mfcc_number)
 );
 
 recognition_test recognition_test_inst 
@@ -96,7 +104,8 @@ recognition_test recognition_test_inst
     .mfcc_extraction_end(mfcc_extraction_end),
     .recognition_result(recognition_result),
     .recognition_result_flag(recognition_result_flag),
-    .rs232_rx_data (rs232_rx_data)
+    .rs232_rx_data (rs232_rx_data),
+    .mfcc_number (mfcc_number)
 
 );
 
