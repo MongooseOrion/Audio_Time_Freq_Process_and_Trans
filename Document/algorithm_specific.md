@@ -81,33 +81,33 @@ VQ ÎÊÌâ¿ÉÒÔÃèÊöÎª£º¸ø¶¨Ò»¸öÒÑÖªÍ³¼ÆÊôÐÔµÄÊ¸Á¿Ô´£¨Ò²¾ÍÊÇÑµÁ·Ñù±¾¼¯£¬Ã¿Ò»¸öÑù±¾ÊÇÒ
 
 ¼Ù¶¨¸ø¶¨Ò»¸öÓÐ $M$ ¸öÊ¸Á¿Ô´£¨ÑµÁ·Ñù±¾£©µÄÑµÁ·ÐòÁÐ£¨ÑµÁ·¼¯£©£º
 
-$$\mathbf{T}=\\{\mathbf{x_1}, \mathbf{x_2},\dots , \mathbf{x_M} \\}$$
+$$\mathbf{T}={\mathbf{x_1}, \mathbf{x_2},\dots , \mathbf{x_M}}$$
 
 Õâ¸öÑµÁ·ÐòÁÐ¿ÉÒÔÍ¨¹ýÒ»Ð©´óÊý¾Ý¿âµÃµ½¡£ÀýÈçÈç¹ûÕâ¸öÊ¸Á¿Ô´ÊÇÓïÒôµÄ»°£¬ÄÇÃ´¿ÉÒÔ¶ÔÒ»Ð©µç»°Â¼Òô²Ã¼ôµÃµ½Ã¿¸öÔ´Ê¸Á¿ $\mathbf{x_m}$¡£Éè $\mathbf{x_m}$ ÊÇ $k$ Î¬µÄ£¬ÔòÓÐ£º
 
-$$\mathbf{x_m}=(x_{m,1}, x_{m,2}, \dots, x_{m,k}),\\ m=1,2,\dots, M$$
+$$\mathbf{x_m}=(x_{m,1}, x_{m,2}, \dots, x_{m,k}),\quad m=1,2,\dots, M$$
 
 ¼ÙÉèÂëÊ¸µÄÊýÄ¿ÊÇ $N$£¨Ò²¾ÍÊÇÒª°ÑÕâ¸öÊ¸Á¿¿Õ¼ä»®·ÖÎª $N$ ¸ö²¿·Ö£¬»òÕßËµÁ¿»¯Îª $N$ ÖÖÖµ£©£¬ÂëÊé£¨ËùÓÐÂëÊ¸µÄ¼¯ºÏ£©±íÊ¾Îª£º
 
-$$\mathbf{C}=\\{\mathbf{c_1}, \mathbf{c_2},\dots , \mathbf{c_N}\\}$$
+$$\mathbf{C}={\mathbf{c_1}, \mathbf{c_2},\dots , \mathbf{c_N}}$$
 
 ÆäÖÐ£¬Ã¿Ò»¸öÂëÊ¸ $\mathbf{c_n}$ ÊÇ¸ö $k$ Î¬ÏòÁ¿£º
 
-$$\mathbf{c_n}=(c_{n,1}, c_{n,2}, \dots, c_{n,k}),\\ n=1,2,\dots ,N$$
+$$\mathbf{c_n}=(c_{n,1}, c_{n,2}, \dots, c_{n,k}),\quad n=1,2,\dots ,N$$
 
 ÓëÂëÊ¸ $\mathbf{c_n}$ ¶ÔÓ¦µÄ±àÂëÇøÓò±íÊ¾Îª $\mathbf{S_n}$ £¬È»ºó½«¿Õ¼äµÄ»®·Ö±íÊ¾Îª£º
 
-$$\mathbf{P}=\\{\mathbf{S_1}, \mathbf{S_2},\dots ,\mathbf{S_N}\\}$$
+$$\mathbf{P}={\mathbf{S_1}, \mathbf{S_2},\dots ,\mathbf{S_N}}$$
 
 Èç¹ûÔ´Ê¸Á¿ $\mathbf{x_m}$ ÔÚ $\mathbf{S_n}$ ÄÚ£¬ÄÇÃ´ËüµÄ½üËÆ±íÊ¾¾ÍÊÇ $\mathbf{c_n}$ £¬¼ÇÎª£º
 
-$$Q(\mathbf{x_m})= \mathbf{c_n}, \text{if}\\ \mathbf{x_m} \in \mathbf{S_n}$$
+$$Q(\mathbf{x_m})= \mathbf{c_n}, \quad \text{if}\ \mathbf{x_m} \in \mathbf{S_n}$$
 
 Èô²ÉÓÃ¾ù·ÖÎó²îÊ§Õæ¶ÈÁ¿£¬ÄÇÃ´Æ½¾ùÊ§Õæ¶È¿É±íÊ¾Îª£º
 
 $$D_{\text{avg}} = \frac{1}{Mk}\sum_{m=1}^{M}|| \mathbf{x_m}-Q(\mathbf{x_m})||^2$$
 
-Áî $\mathbf{e} = \mathbf{x_m}-Q(\mathbf{x_m})$ £¬Ôò³Æ $||\mathbf{e}||^2$ ÎªÅ·ÊÏ¼¸ºÎ¾àÀë¡£
+Áî $\mathbf{e} = \mathbf{x_m}-Q(\mathbf{x_m})$ £¬Ôò³Æ $|| \mathbf{e} ||^2$ ÎªÅ·ÊÏ¼¸ºÎ¾àÀë¡£
 
 Çó½âÂëÊé $\mathbf{C}$ ºÍ¿Õ¼ä»®·Ö $\mathbf{P}$ ÐèÒªÂú×ãÁ½¸öÓÅ»¯Ìõ¼þ£º
 
