@@ -10,6 +10,7 @@
 |-- dataset                 // 深度学习数据集
 |-- Document                // 相关技术文档和说明
 |-- FPGA                    // 比特流文件、约束文件和 ROM 初始化文件
+  |-- bitstream_backup      
 |-- model                   // 深度学习模型文件
 |-- Python                  // python 代码
   |-- gui_ctrl.py           // 上位机侧的控制程序

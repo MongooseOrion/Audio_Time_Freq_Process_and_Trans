@@ -187,10 +187,10 @@ def send_serial_command(command_hex):
         #根据command_hex参数，在日志区显示相应的模式
         if command_hex == '00':
             clear_log()
-            log_message("当前FPGA模式为音频回传")
+            log_message("当前 FPGA 模式为音频回传")
         elif command_hex == '10':
             clear_log()
-            log_message("当前FPGA模式为回声消除")
+            log_message("当前 FPGA 模式为回声消除")
         elif command_hex == '19':
             log_message("增大衰减系数")
         elif command_hex == '1a':
@@ -201,33 +201,33 @@ def send_serial_command(command_hex):
             log_message("减小延迟系数")
         elif command_hex == '21':
             clear_log()
-            log_message("当前FPGA模式为变童声")
+            log_message("当前 FPGA 模式为变童声")
         elif command_hex == '22':
-            log_message("当前FPGA模式为变男声")
+            log_message("当前 FPGA 模式为变男声")
         elif command_hex == '30':
             clear_log()
-            log_message("当前FPGA模式为音频去噪")
+            log_message("当前 FPGA 模式为音频去噪")
         elif command_hex == '41':
             clear_log()
-            log_message("当前FPGA模式为分离人声")
+            log_message("当前 FPGA 模式为分离人声")
         elif command_hex == '42':
-            log_message("当前FPGA模式为分离音乐")
+            log_message("当前 FPGA 模式为分离音乐")
         elif command_hex == '43':
-            log_message("当前FPGA模式为去除旋律")
+            log_message("当前 FPGA 模式为去除旋律")
         elif command_hex == '44':
-            log_message("当前FPGA模式为分离旋律")
+            log_message("当前 FPGA 模式为分离旋律")
         elif command_hex == '45':
-            log_message("当前FPGA模式为分离歌声中的人声")
+            log_message("当前 FPGA 模式为分离歌声中的人声")
         elif command_hex == '50':
             clear_log()
-            log_message("当前FPGA模式为声纹识别")
-            log_message("正在进行声纹训练(说话人0)")
+            log_message("当前 FPGA 模式为声纹识别")
+            log_message("正在进行声纹训练(说话人 0)")
         elif command_hex == '51':
-            log_message("正在进行声纹训练(说话人1)")
+            log_message("正在进行声纹训练(说话人 1)")
         elif command_hex == '52':
-            log_message("正在进行声纹训练(说话人2)")
+            log_message("正在进行声纹训练(说话人 2)")
         elif command_hex == '53':
-            log_message("正在进行声纹训练(说话人3)")
+            log_message("正在进行声纹训练(说话人 3)")
         elif command_hex == '58':
             log_message("正在进行声纹识别")
         elif command_hex == 'a1':
@@ -678,23 +678,23 @@ def show_options(category):
             "减小延迟系数": lambda: send_serial_command('12')
         },
         "人声调整": {
-            "变童声": lambda: send_serial_command('21'),
-            "变男声": lambda: send_serial_command('22')
+            "变得稍尖锐": lambda: send_serial_command('21'),
+            "变得稍低沉": lambda: send_serial_command('22')
         },
         "音频去噪": {"音频去噪": lambda: send_serial_command('30'),
-                 "自适应去底噪": lambda: send_serial_command('31')},
+                    "伪自适应去噪": lambda: send_serial_command('31')},
         "人声分离": {
-            "分离人声": lambda: send_serial_command('41'),
-            "分离音乐": lambda: send_serial_command('42'),
-            "去除旋律": lambda: send_serial_command('43'),
-            "分离旋律": lambda: send_serial_command('44'),
-            "分离歌声中的人声": lambda: send_serial_command('45')
+            "仅保留说话人声": lambda: send_serial_command('41'),
+            "保留旋律和唱歌人声": lambda: send_serial_command('42'),
+            "保留唱歌人声和说话人声": lambda: send_serial_command('43'),
+            "仅保留旋律": lambda: send_serial_command('44'),
+            "仅保留唱歌人声": lambda: send_serial_command('45')
         },
         "声纹识别": {
-            "声纹训练(说话人0)": lambda: send_serial_command('50'),
-            "声纹训练(说话人1)": lambda: send_serial_command('51'),
-            "声纹训练(说话人2)": lambda: send_serial_command('52'),
-            "声纹训练(说话人3)": lambda: send_serial_command('53'),
+            "训练说话人 0": lambda: send_serial_command('50'),
+            "训练说话人 1": lambda: send_serial_command('51'),
+            "训练说话人 2": lambda: send_serial_command('52'),
+            "训练说话人 3": lambda: send_serial_command('53'),
             "声纹识别": lambda: send_serial_command('58')
         },
         "人声分类": {
@@ -720,20 +720,8 @@ def show_options(category):
         },
         "串口设置": {
              "打开串口检测窗口": lambda: create_serial_window()
-            # "回声消除演示": lambda: auto_demo_thread("回声消除"),
-            # "人声调整演示": lambda: auto_demo_thread("人声调整"),
-            # "音频去噪演示": lambda: auto_demo_thread("音频去噪"),
-            # "人声分离演示": lambda: auto_demo_thread("人声分离"),
-            # "声纹识别演示": lambda: auto_demo_thread("声纹识别"),
-            # "人声分类演示": lambda: auto_demo_thread("人声分类"),
-            # "人物画像演示": lambda: auto_demo_thread("人物画像"),
-            # "声音分类演示": lambda: auto_demo_thread("声音分类"),
-            # "变声检测演示": lambda: auto_demo_thread("变声检测"),
-            # "音频录音演示": lambda: auto_demo_thread("音频录音")
         }
-            #发起线程的方式启动自动演示
 
-        # 其他分类和处理函数可以根据需要继续添加
     }
     # 计数器，用于跟踪当前是第几个按钮
     counter = 0
@@ -758,11 +746,7 @@ def show_options(category):
         
         # 更新计数器
         counter += 1
-    # for option, function in options_functions.get(category, {}).items():
-    #     button = tk.Button(options_frame, text=option, command=function, bg="#eeeeee", fg="black", borderwidth=2, font=('微软雅黑', 14), relief=tk.FLAT)
-    #     button.pack(pady=7, padx=20, fill="x")
-    #     button.pack_propagate(False)  # 防止按钮调整到文本大小
-    #     button.config(width=20)  # 设置所有按钮的宽度相同
+
 root = tk.Tk()
 root.title("功能选择")
 root.geometry("1180x705")
@@ -815,396 +799,14 @@ buttons_info = [
 ]
 
 for text, command in buttons_info:
-    tk.Button(categories_frame, text=text, command=command, bg="lightgrey", fg="black", borderwidth=2, font=('微软雅黑', 16), relief=tk.FLAT).pack(pady=5, padx=48, fill="x")
-
-####全自动演示，自动发送串口指令，与播放音频#####################################################
-
-# def play_audio_file(file_path):
-#     # 确定文件格式
-#     file_extension = file_path.split('.')[-1].lower()
-    
-#     # 根据文件扩展名加载音频文件
-#     if file_extension in ['mp3', 'm4a']:
-#         audio = AudioSegment.from_file(file_path, format=file_extension)
-#     elif file_extension == 'wav':
-#         audio = AudioSegment.from_wav(file_path)
-#     else:
-#         print("不支持的文件格式")
-#         return
-    
-#     # 获取音频的声道数和样本字节数
-#     num_channels = audio.channels
-#     bytes_per_sample = audio.sample_width
-    
-#     # 将音频文件转换为wav格式的字节数据，因为simpleaudio需要wav格式
-#     wav_bytes = audio.export(format="wav")
-    
-#     # 使用simpleaudio播放wav字节数据
-#     play_obj = sa.play_buffer(wav_bytes.read(), num_channels=num_channels, bytes_per_sample=bytes_per_sample, sample_rate=audio.frame_rate)
-#     # 不等待播放完成
-
-# def play_audio_file_wait_done(file_path):
-#     # 确定文件格式
-#     file_extension = file_path.split('.')[-1].lower()
-    
-#     # 根据文件扩展名加载音频文件
-#     if file_extension in ['mp3', 'm4a']:
-#         audio = AudioSegment.from_file(file_path, format=file_extension)
-#     elif file_extension == 'wav':
-#         audio = AudioSegment.from_wav(file_path)
-#     else:
-#         print("不支持的文件格式")
-#         return
-    
-#     # 获取音频的声道数和样本字节数
-#     num_channels = audio.channels
-#     bytes_per_sample = audio.sample_width
-    
-#     # 将音频文件转换为wav格式的字节数据，因为simpleaudio需要wav格式
-#     wav_bytes = audio.export(format="wav")
-#     file_path1 = file_path.split('/')[-2] + '/' + file_path.split('/')[-1]
-    
-#     log_message("当前正在播放音频" + file_path1)
-#     # 使用simpleaudio播放wav字节数据
-#     play_obj = sa.play_buffer(wav_bytes.read(), num_channels=num_channels, bytes_per_sample=bytes_per_sample, sample_rate=audio.frame_rate)
-#     # 等待播放完成
-#     # play_obj.wait_done()
-
-# # def play_audio_file_wait_done_nomal(file_path):
-# #     # 确定文件格式
-# #     file_extension = file_path.split('.')[-1].lower()
-    
-# #     # 根据文件扩展名加载音频文件
-# #     if file_extension in ['mp3', 'm4a']:
-# #         audio = AudioSegment.from_file(file_path, format=file_extension)
-# #     elif file_extension == 'wav':
-# #         audio = AudioSegment.from_wav(file_path)
-# #     else:
-# #         print("不支持的文件格式")
-# #         return
-    
-# #     # 获取音频的声道数和样本字节数
-# #     num_channels = audio.channels
-# #     bytes_per_sample = audio.sample_width
-    
-# #     # 将音频文件转换为wav格式的字节数据，因为simpleaudio需要wav格式
-# #     wav_bytes = audio.export(format="wav")
-# #     #归一化
-# #     wav_bytes = wav_bytes / np.max(np.abs(wav_bytes))
-# #     #分离file_path，按/分离，取最后两个
-# #     file_path1 = file_path.split('/')[-2] + '/' + file_path.split('/')[-1]
-    
-# #     log_message("当前正在播放音频" + file_path1)
-# #     # 使用simpleaudio播放wav字节数据
-# #     play_obj = sa.play_buffer(wav_bytes.read(), num_channels=num_channels, bytes_per_sample=bytes_per_sample, sample_rate=audio.frame_rate)
-# #     # 等待播放完成
-# #     play_obj.wait_done()
-# def play_audio_file_wait_done_nomal(file_path):
-#     # 加载音频文件
-#     y, sr = librosa.load(file_path, sr=None)
-    
-#     # 归一化音频数据
-#     y_normalized = y / np.max(np.abs(y))
-    
-#     # 将归一化后的音频数据转换为16位整数
-#     y_int16 = (y_normalized * (2**15 - 1)).astype(np.int16)
-    
-#     # 播放音频
-#     play_obj = sa.play_buffer(y_int16, num_channels=1, bytes_per_sample=2, sample_rate=sr)
-    
-#     # 等待播放完成
-#     play_obj.wait_done()
-
-# def auto_demo_thread(start_flag):
-#         if start_flag == '回声消除':          
-#             thread3 = threading.Thread(target=echo_cancellation)
-#             thread3.start()
-#         elif start_flag == '人声调整':
-#             thread3 = threading.Thread(target=vocal_adjustment)
-#             thread3.start()
-#         elif start_flag == '音频去噪':
-#             thread3 = threading.Thread(target=audio_denoising)
-#             thread3.start()
-#         elif start_flag == '人声分离':
-#             thread3 = threading.Thread(target=vocal_separation)
-#             thread3.start()
-#         elif start_flag == '声纹识别':
-#             thread3 = threading.Thread(target=voiceprint_recognition)
-#             thread3.start()
-#         elif start_flag == '人声分类':
-#             thread3 = threading.Thread(target=voiceprint_classification)
-#             thread3.start()
-#         elif start_flag == '人物画像':
-#             thread3 = threading.Thread(target=character_portrait)
-#             thread3.start()
-#         elif start_flag == '声音分类':
-#             thread3 = threading.Thread(target=sound_classification_start)
-#             thread3.start()
-#         elif start_flag == '变声检测':
-#             thread3 = threading.Thread(target=voice_change_detection)
-#             thread3.start()
-#         elif start_flag == '音频录音':
-#             thread3 = threading.Thread(target=audio_recording)
-#             thread3.start()
-
-# def echo_cancellation():
-#     clear_log1()
-#     log_message1("回声消除演示开始……")
-#     send_serial_command('00')
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/回声音频.m4a")
-#     #当前正在播放回声音频
-#     log_message("当前正在播放 回声音频.m4a")
-#     #等待7s启动回声消除
-#     time.sleep(7)
-#     log_message1("启动回声消除")
-#     send_serial_command('10')
-#     time.sleep(17)
-#     log_message1("回声消除演示完成。")
-#     time.sleep(1)
-
-# def vocal_adjustment():
-#     clear_log1()
-#     log_message1("人声调整演示开始……")
-#     send_serial_command('00')
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/C 变声测试音频/变声测试音频样本2.mp3")
-#     log_message("当前正在播放 变声音频/变声测试音频样本2.mp3")
-#     time.sleep(4)
-#     send_serial_command('21')
-#     log_message1("启动变童声")
-#     time.sleep(7.5)
-#     send_serial_command('00')
-#     log_message("关闭变声")
-#     log_message1("变童声演示完成。")
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/C 变声测试音频/变声测试音频样本1.m4a")
-#     log_message("当前正在播放 变声音频/变声测试音频样本1.m4a")
-#     time.sleep(4)
-#     log_message1("启动变男声")
-#     send_serial_command('22')
-#     time.sleep(7.5)
-#     log_message1("变男声演示完成。")
-#     log_message("关闭变声")
-#     send_serial_command('00')
-#     time.sleep(2)
-
-# def audio_denoising():
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("音频去噪演示开始……")
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/A 去噪测试音频/去噪测试音频样本1.m4a")
-#     log_message("当前正在播放 去噪音频/去噪测试音频样本1.m4a")
-#     log_message1("未进行处理，原声")
-#     time.sleep(13)
-#     send_serial_command('30')
-#     log_message1("启动音频去噪。")
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/A 去噪测试音频/去噪测试音频样本1.m4a")
-#     log_message("当前正在播放 去噪音频/去噪测试音频样本1.m4a")
-#     time.sleep(11)
-#     log_message1("音频去噪演示完成。")
-#     time.sleep(2)
-
-# def vocal_separation():
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("人声分离演示开始……")
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     log_message1("未进行处理，原声")
-#     time.sleep(12.5)
-#     send_serial_command('41')
-#     time.sleep(0.5)
-#     log_message1("仅去除背景音乐）")
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     time.sleep(12.5)
-#     send_serial_command('42')
-#     time.sleep(0.5)
-#     log_message1("分离出背景音乐")
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     time.sleep(12.5)
-#     # send_serial_command('43')
-#     # time.sleep(0.5)
-#     # log_message1("去除旋律，只保留人声部分")
-#     # play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     # log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     # time.sleep(12.5)
-#     send_serial_command('44')
-#     time.sleep(0.5)
-#     log_message1("分离出歌声中单独的旋律")
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     time.sleep(12.5)
-#     # send_serial_command('45')
-#     # time.sleep(0.5)
-#     # log_message1("分离出歌声中的人声")
-#     # play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/B 人声分离测试音频/人声分离测试音频样本.m4a")
-#     # log_message("当前正在播放 人声分离音频/人声分离测试音频样本.m4a")
-#     # time.sleep(12.5)
-#     log_message1("人声分离演示完成。")
-
-# def voiceprint_recognition():
-#     clear_log1()
-#     log_message1("声纹识别演示开始……")
-#     log_message1("开始训练4个说话人的声纹……")
-#     send_serial_command('50')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试样本/1.m4a")
-#     log_message("当前正在播放 声纹训练音频/测试样本/1.m4a")
-#     time.sleep(2.5)
-#     log_message1("说话人0声纹训练完成")
-#     time.sleep(3)
-#     send_serial_command('51')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试样本/26.m4a")
-#     log_message("当前正在播放 声纹训练音频/测试样本/26.m4a")
-#     time.sleep(3)
-#     log_message1("说话人1声纹训练完成")
-#     time.sleep(3)
-#     send_serial_command('52')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试样本/40.m4a")
-#     log_message("当前正在播放 声纹训练音频/测试样本/40.m4a")
-#     time.sleep(3)
-#     log_message1("说话人2声纹训练完成")
-#     time.sleep(3)
-#     send_serial_command('53')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试样本/63.m4a")
-#     log_message("当前正在播放 声纹训练音频/测试样本/63.m4a")
-#     time.sleep(3)
-#     log_message1("说话人3声纹训练完成")
-#     log_message1("声纹训练完成,开始进行声纹识别……")
-#     time.sleep(3)
-#     #测试声纹识别
-#     send_serial_command('58')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试比对库/11.m4a")
-#     log_message("当前正在播放 声纹识别音频/测试比对库/11.m4a")
-#     result = wait_for_serial_data('COM17', 9600, 5)
-#     log_message1("声纹识别结果："+ str(result))
-#     time.sleep(3)
-#     send_serial_command('58')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试比对库/18.m4a")
-#     log_message("当前正在播放 声纹识别音频/测试比对库/18.m4a")
-#     result = wait_for_serial_data('COM17', 9600, 5)
-#     log_message1("声纹识别结果："+ str(result))
-#     time.sleep(3)
-#     send_serial_command('58')
-#     time.sleep(0.5)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/D 声纹识别测试音频/测试比对库/28.m4a")
-#     log_message("当前正在播放 声纹识别音频/测试比对库/28.m4a")
-#     result = wait_for_serial_data('COM17', 9600, 5)
-#     log_message1("声纹识别结果："+ str(result))
-#     log_message1("声纹识别演示完成。")
-#     time.sleep(2)
-
-# def voiceprint_classification():
-#     # #声纹分类，先启动声纹分类，然后播放音频
-#     clear_log1()
-#     log_message1("声纹分类演示开始……")
-#     send_serial_command('00')
-#     vocal_classification_start(True)
-#     time.sleep(0.5)
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/E 声纹分类测试音频/30.m4a")
-#     time.sleep(5.5)
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/E 声纹分类测试音频/50.mp3")
-#     time.sleep(6.5)
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/E 声纹分类测试音频/43.m4a")
-#     time.sleep(5.5)
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/E 声纹分类测试音频/71.mp3")
-#     time.sleep(5.5)
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/E 声纹分类测试音频/72.mp3")
-#     time.sleep(7.5)
-#     log_message1("声纹分类演示完成。")
-#     vocal_classification_start(False)
-
-# def character_portrait():
-#     #人物画像，先启动人物画像，然后播放音频
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("人物画像演示开始……")
-#     voice_emotion(True)
-#     time.sleep(3)
-#     #播放文件夹下面的所有测试音频
-#     audio_files = os.listdir("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/人物画像测试音频")
-#     for audio_file in audio_files:
-#         log_message("当前播放音频："+"人物画像测试音频/"+audio_file)
-#         play_audio_file_wait_done_nomal("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/人物画像测试音频/"+audio_file)
-#         time.sleep(1)
-#     time.sleep(2)
-#     voice_emotion(False)
-#     log_message1("人物画像演示完成。")
-
-# def sound_classification_start():
-#     #声音分类，先启动声音分类，然后播放音频
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("声音分类演示开始……")
-#     sound_classification(True)
-#     time.sleep(2)
-#     #播放文件夹下面的所有测试音频
-#     audio_files = os.listdir("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/声音分类测试音频")
-#     for audio_file in audio_files:
-#         log_message("当前播放音频："+"声音分类测试音频/"+audio_file)
-#         play_audio_file_wait_done_nomal("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/声音分类测试音频/"+audio_file)
-#         time.sleep(1)
-#     time.sleep(2)
-#     sound_classification(False)
-#     log_message1("声音分类演示完成。")
-#     time.sleep(2)
-
-# def voice_change_detection():
-#     #变声检测，先启动变声检测，然后播放音频
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("变声检测演示开始……")
-#     change_voice(True)
-#     time.sleep(1)
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/C 变声测试音频/变声测试音频样本2.mp3")
-#     log_message("当前正在播放变声音频/变声测试音频样本2.mp3")
-#     time.sleep(4)
-#     send_serial_command('21')
-#     log_message("启动变童声")
-#     time.sleep(7.5)
-#     send_serial_command('00')
-#     log_message("关闭变声")
-#     play_audio_file("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/C 变声测试音频/变声测试音频样本1.m4a")
-#     log_message("当前正在播放变声音频/变声测试音频样本1.m4a")
-#     time.sleep(4)
-#     log_message("启动变男声")
-#     send_serial_command('22')
-#     time.sleep(7.5)
-#     send_serial_command('00')
-#     log_message("关闭变声")
-#     time.sleep(2)
-#     change_voice(False)
-#     log_message1("变声检测演示完成。")
-#     time.sleep(2)
-
-# def audio_recording():
-#     #音频录音，先启动音频录音，然后播放音频
-#     clear_log1()
-#     send_serial_command('00')
-#     log_message1("音频录音演示开始……")
-#     send_serial_command('a1')
-#     log_message1("开始录音")
-#     play_audio_file_wait_done("C:/Users/smn90/repo/FPGA_Audio_Noise_Gate/Sample/2024集创赛紫光同创杯测试音频/录音测试.m4a")
-#     log_message("当前正在播放 录音测试.m4a")
-#     time.sleep(5)
-#     send_serial_command('a2')
-#     log_message1("停止录音")
-#     time.sleep(2)
-#     send_serial_command('a8')
-#     log_message1("播放录音")
-#     time.sleep(6)
-#     log_message1("音频录音演示完成。")
-
-
-
+    tk.Button(categories_frame, \
+              text=text, \
+              command=command, \
+              bg="lightgrey", \
+              fg="black", \
+              borderwidth=2, \
+              font=('微软雅黑', 16), \
+              relief=tk.FLAT).pack(pady=5, padx=48, fill="x")
 
 
 # 示例：向日志区写入信息
