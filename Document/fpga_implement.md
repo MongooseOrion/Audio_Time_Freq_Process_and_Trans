@@ -20,10 +20,40 @@
 * the respective OPEN-SOURCE licenses. 
 * 
 * THIS CODE IS PROVIDED BY https://github.com/MongooseOrion. 
-* FILE ENCODER TYPE: GBK
+* FILE ENCODER TYPE: UTF-8
 * ========================================================================
 -->
 # 相关功能的 FPGA 实现 
+
+## 短时能量和短时过零率计算实现
+
+### 过零率
+
+过零率（Zero Crossing Rate, ZCR）是衡量语音信号中符号变化频率的指标，反映了信号的频率内容。
+
+  * 经过阈值判断的过零率（`zeroCrossing_cnt`）:
+      
+      当信号的符号位（最高位，`wr_data[15]`）与前一时刻信号的符号位不同（即从正到负或从负到正的过零情况），且信号的绝对值大于给定的阈值或小于时，过零次数 `zeroCrossing_cnt` 加 1。
+
+  * 未经阈值判断的过零率（`zeroCrossing_cnt2`）:
+      
+      同样地，当前后两个信号的符号位不同，无论信号的幅度大小，`zeroCrossing_cnt2` 都会加 1。
+
+### 短时能量
+
+短时能量用于衡量语音信号在某个短时间段内的能量大小，这对于检测语音信号的存在与否非常有效。
+
+在时钟的上升沿，信号被累加到 `short_time_energy` 中，用于计算短时能量。
+
+如果累加的短时能量超过阈值 `threshold_hign3`，能量值会被保持（即能量不会再增加）。
+
+在每（FFT 帧移数量）个时钟周期后，`short_time_energy` 被重置为零，以开始新一轮的累加。
+
+### 语音标志的设置
+
+在每（FFT 帧移数量）个时钟周期后，`voice_flag` 会根据当前的 `short_time_energy` 大小决定是否设置为 1。
+
+如果短时能量超过阈值 `threshold_hign`，则标志 `voice_flag` 被置为 1，表明当前帧中可能包含有效的语音信号。
 
 ## 声纹识别 
 

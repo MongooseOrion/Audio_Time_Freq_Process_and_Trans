@@ -5,7 +5,7 @@ module noise_reduction
     //parameter SPLIT_MODE = 'd5,    //分离或者降噪模式配置，1：分离出说话的人声（背景歌声去除）   2：分离出歌声  3:去除旋律  4：分离旋律  5：分离出歌声中的人声
     parameter FFT_LENGTH = 'd1024,
     parameter TOTAL_FRAME = 'd45,  //将一段音频分成100个大帧
-    parameter SMALL_FRAME = 'd21    //一个大帧是多少小帧
+    parameter SMALL_FRAME = 'd21    //一个大帧是多少 FFT 帧
 )
 (   
     input                       clk,
