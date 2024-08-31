@@ -1,3 +1,4 @@
+// 计算均值
 module mean 
 #(
     parameter DATA_WIDTH         = 'd9,

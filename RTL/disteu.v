@@ -1,3 +1,4 @@
+// 计算欧氏几何距离
 module disteu
 #(
     parameter DATA_WIDTH         = 'd9,
@@ -15,7 +16,7 @@ module disteu
     input                                 cfg_valid,
     input  [MEAN_FRAME_WIDTH -1'b1: 0]    cfg_data,
     input                                 cfg_last,
-    input  [5: 0]                         cfg_mode_data,   //分高2位和低4位，如果高2位等于00，那么表示指定列与第（低4位列进行）列进行计算，结果输出是欧式距离和。 如果高2位是01，表示多列与多列进行计算，结果输出为数据流形式的比较大小的结果。高两位11，多对多，结果输出为每行的最小值，再求和
+    input  [5: 0]                         cfg_mode_data,   //分高2位和低4位，如果高2位等于00，那么表示指定列与第（低4位列进行）列进行计算，结果输出是欧式距离和。 如果高2位是01，表示多列与多列进行计算，结果输出为数据流形式的比较大小的结果。高两位10，多对多，结果输出为每行的最小值，再求和
     output reg                            o_ready,
     output reg                            o_valid,
     output reg [29:0]                     o_data

@@ -278,7 +278,7 @@ i_10_16_a_768_fifo i_10_16_a_768_fifo_inst (
 
 
 divider_signed divider_signed_inst (
-	.dividend({rd_data2[15],rd_data2,15'd0}), 
+	.dividend({rd_data2[15],rd_data2,15'd0}), // 扩大 65536
 	.divisor({16'd0,data_in_max}), 
 	.start(rd_en1), 
 	.clock(clk), 

@@ -177,12 +177,15 @@ parameter        SIN_WINDOW   = 8'B00100000;  //加窗
 parameter        FFT_DATA_IN  = 8'b00000100;  //将加sin窗后的数据传给fft_demo
 parameter        FFT_DATA_OUT = 8'b00001000;  //等待数据变换完成，接收传出的数据，将其存储进fifo或ram里面，进行ifft或者加窗输出
 parameter        END_DATA_OUT = 8'b00010000;  //对频域的数据进行处理,处理完以后跳转到FFT_MODE_CFG设置成ifft，
+// 幅值
 parameter signed threshold_hign = 16'b0111111111111111;  //+32767
 parameter signed threshold_low  = 16'b1000000000000000; // -32768
 
+// 短时能量
 parameter signed threshold_hign1 = 16'b0000000000011111;  //+32767
 parameter signed threshold_low1  = 16'b1111111111100000; // -32768
 
+// 短时过零率
 parameter signed threshold_hign2 = 16'b0000000000000111;  //+12
 parameter signed threshold_low2  = 16'b1111111111111000; // -0100
 
@@ -458,7 +461,7 @@ always @(posedge clk or negedge rst_n) begin
                     noise_reduction_addr <= noise_reduction_addr ;
                 end
             end
-            END_DATA_OUT:begin      //前面的128个数据与上一次ifft的结果（存进FIFO的数据）重叠相加，后面的128个数据写进fifo
+            END_DATA_OUT:begin      //前面的512个数据与上一次ifft的结果（存进FIFO的数据）重叠相加，后面的512个数据写进fifo
                 if (cnt4 > 'd4) begin
                     cnt4 <= cnt4;
                 end
@@ -718,7 +721,7 @@ begin
     
 end
 
-//sin_window_result这个fifo，用来存储加窗后的结果ifft的输入，与存储阈值化处理以后要进行ifft的输入，这里是进行写入数据的选择
+// 这个fifo，用来存储加窗后的结果 fft 的输入，或者是存储阈值化处理以后要进行ifft的输入，这里是进行写入数据的选择
 always @(posedge clk or negedge rst_n)
 begin
     if (~rst_n) begin
@@ -767,7 +770,7 @@ begin
     end
 end
 
-//写delay_128_fifo 使能生成
+//写delay_128_fifo 使能生成，注意实际是delay512，没改而已
 always @(posedge sck or negedge rst_n)
 begin
     if(~rst_n) begin
