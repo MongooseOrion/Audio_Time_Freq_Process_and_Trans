@@ -640,7 +640,7 @@ length_512_width_4_ram length_512_width_4_ram_inst1 (   //存储disteu mode1模�
   .rd_rst(~rst_n)       // input
 );
 
-length_512_width_9_ram length_512_width_4_ram_inst2 (   //存储cfg数据的输入
+length_512_width_9_ram length_512_width_4_ram_inst2 (   // 存储要索引的向量标识，流向欧式距离模块的 cfg_data
   .wr_data(disteu_cfg_wr_data),    // input [8:0]
   .wr_addr(disteu_cfg_wr_addr),    // input [8:0]
   .wr_en(disteu_cfg_wr_en),        // input
