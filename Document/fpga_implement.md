@@ -127,7 +127,7 @@ $$C_n = \sum_{m=0}^{M-1} S_m \cdot \varphi,\quad n=0,1,\dots,M-1$$
 
 因此，DCT 系数应该有 $M^2=31^2=961$ 个，可以发现[DCT 系数查找表文件](../FPGA/proc_dat/dct_data.dat)中系数数量对得上。
 
-$S_m$ 表示为上一步存储到 RAM 中的数据，即 `rd_data6`； $varphi$ 表示为信号 `dct_rd_data`；通过一个乘法器可以计算 $S_m \cdot \varphi$ ，结果存储在 `p5` 中；在 `DCT_COMPUTE` 状态下，累加 `p5` 的值，结果存储在 `wr_data7` 中，为减少计算开销，取高 9 位；表示 DCT 的输出 `C_n`，它的数量应该是 31 个。
+$S_m$ 表示为上一步存储到 RAM 中的数据，即 `rd_data6`； $\varphi$ 表示为信号 `dct_rd_data`；通过一个乘法器可以计算 $S_m \cdot \varphi$ ，结果存储在 `p5` 中；在 `DCT_COMPUTE` 状态下，累加 `p5` 的值，结果存储在 `wr_data7` 中，为减少计算开销，取高 9 位；表示 DCT 的输出 `C_n`，它的数量应该是 31 个。
 
 在完成 MFCC 特征提取后，向外发送 `mfcc_extraction_end` 信号。
 
