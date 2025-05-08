@@ -560,7 +560,7 @@ voiceprint_recognition#(
 
 //
 // 快速傅里叶变换 IP 核
-ipsxb_fft_demo_pp_1024  u_fft_wrapper ( 
+ipsxb_fft_demo_main_1024  u_fft_wrapper ( 
     .i_aclk                 (core_clk               ),
     .i_axi4s_data_tvalid    (xn_axi4s_data_tvalid),
     .i_axi4s_data_tdata     (xn_axi4s_data_tdata ),
