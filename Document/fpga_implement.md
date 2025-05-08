@@ -127,7 +127,7 @@ $$S_m = \sum_{k=0}^{N-1} E[k] \cdot H_m(f_k)$$
 
 DCT 系数通过在 matlab 中使用 DCT 计算公式导出，量化后的固化到 FPGA ROM 中。现在我们来简化一下[算法细节](./algorithm_specific.md#mfcc-参数计算)中 DCT 计算公式，令系数 $\cos\left[\frac{\pi n (2m + 1)}{2M}\right] $ 等于 $\varphi$ ，则式子变为：
 
-$$C_n = \sum_{m=0}^{M-1} S_m \cdot \varphi,\quad n=0,1,\dots,M-1$$
+$$C_n = \sum_{m=0}^{M-1} S_m \cdot \varphi_{m|n},\quad n=0,1,\dots,M-1$$
 
 因此，DCT 系数应该有 $M^2=31^2=961$ 个，可以发现[DCT 系数查找表文件](../FPGA/proc_dat/dct_data.dat)中系数数量对得上。
 
